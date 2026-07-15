@@ -5,13 +5,12 @@ export default defineConfig({
   resolve: {
     extensions: ['.ts', '.js', '.mjs', '.cjs', '.json'],
     alias: {
-      '@math-game/core-math': fileURLToPath(new URL('./packages/core-math/src/index.ts', import.meta.url)),
-      '@math-game/memory-client': fileURLToPath(new URL('./packages/memory-client/src/index.ts', import.meta.url)),
+      '@math-game/core-math': fileURLToPath(new URL('../core-math/src/index.ts', import.meta.url)),
+      '@math-game/memory-client': fileURLToPath(new URL('../memory-client/src/index.ts', import.meta.url)),
     },
   },
   test: {
     environment: 'node',
-    include: ['src/**/*.test.ts', 'src/**/*.integration.test.ts'],
     server: {
       deps: {
         inline: ['@math-game/core-math', '@math-game/memory-client'],

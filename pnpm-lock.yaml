@@ -259,6 +259,9 @@ importers:
       '@math-game/core-math':
         specifier: workspace:*
         version: link:../core-math
+      '@math-game/memory-client':
+        specifier: workspace:*
+        version: link:../memory-client
 
   packages/world-gen:
     dependencies:

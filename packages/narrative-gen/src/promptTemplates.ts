@@ -1,10 +1,6 @@
 import type { PlotNode } from './plotSkeleton.js';
 import type { DecisionVector } from '@math-game/core-math';
-
-export interface MemorySnippet {
-  content: string;
-  score?: number;
-}
+import type { MemorySnippet } from '@math-game/memory-client';
 
 function formatVector(v: DecisionVector): string {
   const parts: string[] = [];

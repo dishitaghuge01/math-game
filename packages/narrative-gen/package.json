@@ -9,6 +9,7 @@
   }
   ,
   "dependencies": {
-    "@math-game/core-math": "workspace:*"
+    "@math-game/core-math": "workspace:*",
+    "@math-game/memory-client": "workspace:*"
   }
 }

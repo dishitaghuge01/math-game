@@ -6,7 +6,8 @@
     "composite": true,
     "baseUrl": ".",
     "paths": {
-      "@math-game/core-math": ["../core-math"]
+      "@math-game/core-math": ["../core-math/src/index.ts"],
+      "@math-game/memory-client": ["../memory-client/src/index.ts"]
     },
     "lib": [
       "ES2022"
@@ -17,6 +18,7 @@
   ]
   ,
   "references": [
-    { "path": "../core-math" }
+    { "path": "../core-math" },
+    { "path": "../memory-client" }
   ]
 }

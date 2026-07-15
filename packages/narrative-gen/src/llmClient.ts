@@ -1,44 +1,47 @@
 import type { PlotNode } from './plotSkeleton.js';
 import type { DecisionVector } from '@math-game/core-math';
-import type { MemorySnippet } from './promptTemplates.js';
+import type { MemorySnippet } from '@math-game/memory-client';
 import { buildNarrationPrompt } from './promptTemplates.js';
 
-const ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages';
+const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
+const MODEL = 'llama-3.3-70b-versatile';
 
 export async function narrateNode(node: PlotNode, memory: MemorySnippet[], vector: DecisionVector): Promise<string> {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
+  const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) {
-    throw new Error('Missing ANTHROPIC_API_KEY environment variable');
+    throw new Error('Missing GROQ_API_KEY environment variable');
   }
 
   const prompt = buildNarrationPrompt(node, memory, vector);
 
   const body = {
-    model: 'claude-sonnet-4-6',
+    model: MODEL,
     messages: [
       { role: 'user', content: prompt }
     ],
     temperature: 0.3,
   };
 
-  const res = await fetch(ANTHROPIC_URL, {
+  const res = await fetch(GROQ_URL, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'x-api-key': apiKey,
+      'Authorization': `Bearer ${apiKey}`,
     },
     body: JSON.stringify(body),
   });
 
   if (!res.ok) {
     const text = await res.text().catch(() => '');
-    throw new Error(`Anthropic API error: ${res.status} ${res.statusText} ${text}`);
+    throw new Error(`Groq API error: ${res.status} ${res.statusText} ${text}`);
   }
 
-  const data = await res.json().catch(() => ({}));
-  // Try common response shapes
-  const completion = (data as any).completion ?? (data as any).output?.[0]?.content?.text ?? (data as any).text ?? '';
-  return String(completion);
+  const data = await res.json();
+  const content = (data as any).choices?.[0]?.message?.content;
+  if (!content) {
+    throw new Error('Unexpected Groq response shape');
+  }
+  return String(content);
 }
 
 export default narrateNode;
