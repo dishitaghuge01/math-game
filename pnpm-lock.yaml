@@ -256,7 +256,11 @@ importers:
 
   packages/narrative-gen: {}
 
-  packages/world-gen: {}
+  packages/world-gen:
+    dependencies:
+      '@math-game/core-math':
+        specifier: workspace:*
+        version: link:../core-math
 
 packages:
 
