@@ -4,6 +4,25 @@ export const ALPHA_SMOOTHING = 0.20;
 export const BETA_VOLATILITY = 0.30;
 export const SIGMOID_STEEPNESS = 6;
 
+export const PALETTE_BASE_HUE = 220;
+export const PALETTE_MORALITY_HUE_WEIGHT = 140;
+export const PALETTE_BASE_SATURATION = 40;
+export const PALETTE_AGGRESSION_SATURATION_WEIGHT = 40;
+export const PALETTE_BASE_LIGHTNESS = 45;
+export const PALETTE_VOLATILITY_LIGHTNESS_WEIGHT = 20;
+export const PALETTE_ACCENT_HUE_OFFSET = 40;
+export const PALETTE_CURIOSITY_HUE_SWEEP = 80;
+export const PALETTE_SECOND_ACCENT_HUE_OFFSET = 70;
+export const PALETTE_MIN_SATURATION = 25;
+export const PALETTE_SECOND_MIN_SATURATION = 30;
+export const PALETTE_LIGHTNESS_INCREMENT = 15;
+export const PALETTE_LIGHTNESS_DECREMENT = 10;
+export const PALETTE_SATURATION_DECREMENT = 10;
+export const PALETTE_SECOND_SATURATION_DECREMENT = 5;
+export const PALETTE_MAX_LIGHTNESS = 85;
+export const PALETTE_MIN_LIGHTNESS = 20;
+export const PALETTE_HUE_WRAP = 360;
+
 export const W_LOOT: Record<string, Partial<Record<keyof DecisionVector, number>>> = {
   common: {
     morality: 0,

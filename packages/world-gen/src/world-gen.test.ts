@@ -1,8 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { createInitialVector } from '@math-game/core-math';
-
-import { TERRAIN_BASE_AMPLITUDE, TERRAIN_BASE_FREQUENCY, terrainAmplitude, terrainFrequency } from './constants.js';
+import { createInitialVector, TERRAIN_BASE_AMPLITUDE, TERRAIN_BASE_FREQUENCY, terrainAmplitude, terrainFrequency } from '@math-game/core-math';
 import { createSimplexNoise2D } from './noise.js';
 import { generateHeightmap } from './terrain.js';
 import { WaveFunctionCollapse, WfcCollapseError } from './wfc.js';

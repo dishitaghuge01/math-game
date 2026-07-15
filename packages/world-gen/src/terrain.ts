@@ -1,8 +1,9 @@
-import { type DecisionVector } from '@math-game/core-math';
-import { mulberry32, seededRange } from '@math-game/core-math';
+import { mulberry32, seededRange, terrainAmplitude, terrainFrequency } from '@math-game/core-math';
 
-import { DEFAULT_OCTAVES, DEFAULT_PERSISTENCE, terrainAmplitude, terrainFrequency } from './constants.js';
 import { createSimplexNoise2D, fractalNoise2D } from './noise.js';
+
+export const DEFAULT_OCTAVES = 4;
+export const DEFAULT_PERSISTENCE = 0.5;
 
 export interface TerrainParams {
   width: number;

@@ -1,6 +1,3 @@
-export const DEFAULT_OCTAVES = 4;
-export const DEFAULT_PERSISTENCE = 0.5;
-
 export const TERRAIN_BASE_AMPLITUDE = 0.4;
 export const TERRAIN_RISK_AMPLITUDE_WEIGHT = 0.5;
 export const TERRAIN_VOLATILITY_AMPLITUDE_WEIGHT = 0.3;

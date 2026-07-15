@@ -4,3 +4,4 @@ export * from './hash';
 export * from './seed';
 export * from './prng';
 export * from './mappingFunctions';
+export * from './terrainMapping';
