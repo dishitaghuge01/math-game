@@ -10,19 +10,20 @@ export class SupermemoryClientError extends Error {
 export interface SupermemoryClientConfig {
   baseUrl?: string;
   apiKey: string;
-  containerTag?: string;
+  /** Escape hatch: forces ALL calls to use one shared containerTag instead of per-user isolation. Only pass this if you explicitly want cross-user sharing. */
+  forceSharedContainerTag?: string;
 }
 
 export class SupermemoryClient {
   private readonly baseUrl: string;
   private readonly apiKey: string;
-  private readonly containerTag?: string;
+  private readonly forceSharedContainerTag?: string;
 
   constructor(config: SupermemoryClientConfig) {
     const rawBaseUrl = (config.baseUrl ?? process.env.SUPERMEMORY_BASE_URL ?? 'http://localhost:6767').trim();
     this.baseUrl = rawBaseUrl.replace(/\/$/, '');
     this.apiKey = config.apiKey.trim();
-    this.containerTag = config.containerTag?.trim() ?? process.env.SUPERMEMORY_CONTAINER_TAG?.trim();
+    this.forceSharedContainerTag = config.forceSharedContainerTag?.trim();
   }
 
   async addMemory(userId: string, memory: GameMemory): Promise<{ id: string; status: string }> {
@@ -51,7 +52,7 @@ export class SupermemoryClient {
 
     const body = (await response.json()) as { id?: string; status?: string };
     return {
-      id: customId,
+      id: body.id ?? customId,
       status: body.status ?? 'queued',
     };
   }
@@ -182,7 +183,7 @@ export class SupermemoryClient {
   }
 
   private getContainerTag(userId: string): string {
-    return this.containerTag ?? `user_${this.sanitize(userId)}`;
+    return this.forceSharedContainerTag ?? `user_${this.sanitize(userId)}`;
   }
 
   private sanitize(value: string): string {

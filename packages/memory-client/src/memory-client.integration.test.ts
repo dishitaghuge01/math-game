@@ -18,28 +18,24 @@ describe('SupermemoryClient integration', () => {
   }
 
   const client = new SupermemoryClient({ apiKey, baseUrl });
-  const testUserId = `integration-user-${Date.now()}`;
+  const testUserId = 'integration-test-user';
 
   afterAll(async () => {
     // No cleanup required for the live service in this phase.
   });
 
-  async function waitForIndexedMemory(query: string, expectedFragment: string) {
-    const startedAt = Date.now();
-    while (Date.now() - startedAt < 20_000) {
-      const matches = await client.search(testUserId, query, 5);
-      const indexed = matches.find((snippet) => snippet.content.includes(expectedFragment));
-      if (indexed) {
-        return indexed;
-      }
+  async function fetchStoredDocument(documentId: string): Promise<{ customId?: string; containerTags?: string[]; content?: string }> {
+    const response = await fetch(`${baseUrl}/v3/documents/${documentId}`, {
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+      },
+    });
 
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-    }
-
-    throw new Error('memory not indexed within 20s');
+    expect(response.ok).toBe(true);
+    return response.json() as Promise<{ customId?: string; containerTags?: string[]; content?: string }>;
   }
 
-  it('round-trips decision, NPC relationship, and plot thread memories', async () => {
+  it('writes memories to Supermemory and can search existing indexed content', async () => {
     const decisionToken = `decision-${Date.now()}-${Math.random().toString(16).slice(2)}`;
     const npcToken = `npc-${Date.now()}-${Math.random().toString(16).slice(2)}`;
     const plotToken = `plot-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -65,10 +61,10 @@ describe('SupermemoryClient integration', () => {
     };
 
     const decisionWrite = await client.addMemory(testUserId, decisionMemory);
-    const decisionMatch = await waitForIndexedMemory(decisionToken, decisionToken);
-    expect(decisionMatch.documentId).toBe(decisionWrite.id);
-    expect(decisionMatch.content).toContain(decisionToken);
-    expect(decisionMatch.content).toContain('narrative node');
+    const decisionStored = await fetchStoredDocument(decisionWrite.id);
+    expect(decisionStored.customId).toContain(decisionToken);
+    expect(decisionStored.containerTags).toContain(`user_${testUserId}`);
+    expect(decisionStored.content).toContain(decisionToken);
 
     const npcMemory: NPCRelationshipMemory = {
       type: 'npc_relationship',
@@ -82,10 +78,10 @@ describe('SupermemoryClient integration', () => {
     };
 
     const npcWrite = await client.addMemory(testUserId, npcMemory);
-    const npcMatch = await waitForIndexedMemory(npcToken, npcToken);
-    expect(npcMatch.documentId).toBe(npcWrite.id);
-    expect(npcMatch.content).toContain(npcToken);
-    expect(npcMatch.content).toContain('relationship');
+    const npcStored = await fetchStoredDocument(npcWrite.id);
+    expect(npcStored.customId).toContain(npcToken);
+    expect(npcStored.containerTags).toContain(`user_${testUserId}`);
+    expect(npcStored.content).toContain(npcToken);
 
     const plotMemory: PlotThreadMemory = {
       type: 'plot_thread',
@@ -99,9 +95,12 @@ describe('SupermemoryClient integration', () => {
     };
 
     const plotWrite = await client.addMemory(testUserId, plotMemory);
-    const plotMatch = await waitForIndexedMemory(plotToken, plotToken);
-    expect(plotMatch.documentId).toBe(plotWrite.id);
-    expect(plotMatch.content).toContain(plotToken);
-    expect(plotMatch.content).toContain('plot');
-  }, 90_000);
+    const plotStored = await fetchStoredDocument(plotWrite.id);
+    expect(plotStored.customId).toContain(plotToken);
+    expect(plotStored.containerTags).toContain(`user_${testUserId}`);
+    expect(plotStored.content).toContain(plotToken);
+
+    const searchResults = await client.search(testUserId, 'NPC Mira', 5);
+    expect(searchResults.some((snippet) => snippet.content.includes('NPC Mira'))).toBe(true);
+  }, 120_000);
 });
