@@ -7,6 +7,12 @@
     "build": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
+    "@math-game/core-math": "workspace:*",
+    "@math-game/world-gen": "workspace:*",
+    "@math-game/narrative-gen": "workspace:*",
+    "@math-game/mechanics-gen": "workspace:*",
+    "@math-game/memory-client": "workspace:*",
+    "dotenv": "^16.4.2",
     "express": "^4.21.0"
   },
   "devDependencies": {
