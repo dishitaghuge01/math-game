@@ -6,7 +6,7 @@
     "composite": true,
     "baseUrl": ".",
     "paths": {
-      "@math-game/core-math": ["../core-math/dist/index.js", "../core-math/src/index.ts"]
+      "@math-game/core-math": ["../core-math"]
     },
     "lib": [
       "ES2022"
