@@ -13,13 +13,30 @@ function DecisionRoute() {
   const { narrative, allegiance, applyVectorDelta, applyAllegianceDelta, setNarrative } =
     useDecisionStore();
 
-  const onChoose = async (id: string) => {
-    const res = await postDecision(id);
-    applyVectorDelta(res.vectorDelta);
-    applyAllegianceDelta(res.allegianceDelta);
-    const next = await getNarrativeNode(res.nextNodeId);
-    setNarrative(next);
-    navigate({ to: "/character" });
+  const onChoose = async (choiceId: string) => {
+    const choice = narrative.choices.find((c) => c.id === choiceId);
+    if (!choice) {
+      console.error(`Choice ${choiceId} not found`);
+      return;
+    }
+
+    // TODO: impact vector is missing from UI choices — this is a gap between UI and server.
+    // UI only has id/label/description; server needs Partial<DecisionVector> impact.
+    // Currently passing empty impact object as placeholder. This needs to be resolved
+    // before Phase 10 is production-ready.
+    const impact: Record<string, unknown> = {};
+
+    try {
+      const res = await postDecision(choiceId, choice.label, "current_node", impact);
+      applyVectorDelta(res.vectorDelta);
+      applyAllegianceDelta(res.allegianceDelta);
+      const next = await getNarrativeNode(res.nextNodeId);
+      setNarrative(next);
+      navigate({ to: "/character" });
+    } catch (error) {
+      console.error("Failed to apply decision:", error);
+      throw error;
+    }
   };
 
   return (

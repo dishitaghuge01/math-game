@@ -1,41 +1,91 @@
 import type { DecisionVector, Allegiance, WorldChunk, NarrativeNode } from "@/store/decisionStore";
+import { getOrCreateClientIds } from "./session";
 
-export async function postDecision(choiceId: string): Promise<{
+const getServerUrl = () => import.meta.env.VITE_SERVER_URL ?? "http://localhost:4000";
+
+export async function postDecision(
+  choiceId: string,
+  choiceLabel: string,
+  narrativeNodeId: string,
+  impact: Partial<DecisionVector>,
+): Promise<{
   vectorDelta: Partial<DecisionVector>;
   allegianceDelta: Allegiance;
   nextNodeId: string;
 }> {
-  return {
-    vectorDelta: { morality: choiceId.length % 2 === 0 ? 0.1 : -0.1 },
-    allegianceDelta: { CONCLAVE: 0.05, SYNDICATE: -0.03 },
-    nextNodeId: "node_" + choiceId,
-  };
+  const { sessionId, userId } = getOrCreateClientIds();
+  const serverUrl = getServerUrl();
+
+  try {
+    const res = await fetch(`${serverUrl}/decision`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        sessionId,
+        userId,
+        choiceId,
+        choiceLabel,
+        narrativeNodeId,
+        impact,
+      }),
+    });
+
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`Decision API error: ${res.status} ${res.statusText} ${text}`);
+    }
+
+    return res.json();
+  } catch (err) {
+    if (err instanceof Error) {
+      throw err;
+    }
+    throw new Error(String(err));
+  }
 }
 
-export async function getWorldChunk(_chunkId: string): Promise<WorldChunk> {
-  const N = 16;
-  const grid = Array.from({ length: N }, () =>
-    Array.from({ length: N }, () => Math.floor(Math.random() * 4)),
-  );
-  const revealed = Array.from({ length: N }, (_, r) =>
-    Array.from({ length: N }, (_, c) => Math.abs(r - 8) + Math.abs(c - 8) < 5),
-  );
-  return {
-    grid,
-    revealed,
-    locationName: "SECTOR_07 / NULL_MARSH",
-    currentPosition: { row: 8, col: 8 },
-  };
+export async function getWorldChunk(chunkId: string): Promise<WorldChunk> {
+  const { sessionId } = getOrCreateClientIds();
+  const serverUrl = getServerUrl();
+
+  try {
+    const res = await fetch(
+      `${serverUrl}/generate/world/${encodeURIComponent(chunkId)}?sessionId=${encodeURIComponent(sessionId)}`,
+    );
+
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`World API error: ${res.status} ${res.statusText} ${text}`);
+    }
+
+    return res.json();
+  } catch (err) {
+    if (err instanceof Error) {
+      throw err;
+    }
+    throw new Error(String(err));
+  }
 }
 
-export async function getNarrativeNode(_nodeId: string): Promise<NarrativeNode> {
-  return {
-    narrative:
-      "The signal fractures across the lattice. A voice, or the memory of one, asks you to choose. Every path rewrites what you were.",
-    choices: [
-      { id: "trust", label: "TRUST_THE_SIGNAL", description: "Follow the voice into the deep lattice." },
-      { id: "sever", label: "SEVER_LINK", description: "Cut the transmission before it rewrites you." },
-      { id: "mirror", label: "MIRROR_IT", description: "Reflect the signal back into itself." },
-    ],
-  };
+export async function getNarrativeNode(nodeId: string): Promise<NarrativeNode> {
+  const { sessionId } = getOrCreateClientIds();
+  const serverUrl = getServerUrl();
+
+  try {
+    const res = await fetch(
+      `${serverUrl}/generate/narrative/${encodeURIComponent(nodeId)}?sessionId=${encodeURIComponent(sessionId)}`,
+    );
+
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`Narrative API error: ${res.status} ${res.statusText} ${text}`);
+    }
+
+    return res.json();
+  } catch (err) {
+    if (err instanceof Error) {
+      throw err;
+    }
+    throw new Error(String(err));
+  }
 }

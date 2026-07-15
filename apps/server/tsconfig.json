@@ -1,36 +1,14 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "rootDir": "../..",
+    "rootDir": "src",
     "outDir": "dist",
     "lib": [
       "ES2022"
     ],
-    "composite": true,
-    "paths": {
-      "@math-game/core-math": [
-        "../../packages/core-math/src/index.ts"
-      ],
-      "@math-game/world-gen": [
-        "../../packages/world-gen/src/index.ts"
-      ],
-      "@math-game/narrative-gen": [
-        "../../packages/narrative-gen/src/index.ts"
-      ],
-      "@math-game/mechanics-gen": [
-        "../../packages/mechanics-gen/src/index.ts"
-      ],
-      "@math-game/memory-client": [
-        "../../packages/memory-client/src/index.ts"
-      ]
-    }
+    "composite": true
   },
   "include": [
-    "src",
-    "../../packages/core-math/src",
-    "../../packages/world-gen/src",
-    "../../packages/narrative-gen/src",
-    "../../packages/mechanics-gen/src",
-    "../../packages/memory-client/src"
+    "src"
   ]
 }

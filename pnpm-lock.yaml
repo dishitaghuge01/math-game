@@ -17,6 +17,24 @@ importers:
 
   apps/server:
     dependencies:
+      '@math-game/core-math':
+        specifier: workspace:*
+        version: link:../../packages/core-math
+      '@math-game/mechanics-gen':
+        specifier: workspace:*
+        version: link:../../packages/mechanics-gen
+      '@math-game/memory-client':
+        specifier: workspace:*
+        version: link:../../packages/memory-client
+      '@math-game/narrative-gen':
+        specifier: workspace:*
+        version: link:../../packages/narrative-gen
+      '@math-game/world-gen':
+        specifier: workspace:*
+        version: link:../../packages/world-gen
+      dotenv:
+        specifier: ^16.4.2
+        version: 16.6.1
       express:
         specifier: ^4.21.0
         version: 4.22.2
@@ -242,11 +260,19 @@ importers:
         specifier: ^8.0.16
         version: 8.1.4(@types/node@22.20.1)(jiti@2.7.0)
 
-  packages/asset-gen: {}
+  packages/asset-gen:
+    dependencies:
+      '@math-game/core-math':
+        specifier: workspace:*
+        version: link:../core-math
 
   packages/core-math: {}
 
-  packages/mechanics-gen: {}
+  packages/mechanics-gen:
+    dependencies:
+      '@math-game/core-math':
+        specifier: workspace:*
+        version: link:../core-math
 
   packages/memory-client:
     devDependencies:
