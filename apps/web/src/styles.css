@@ -1,0 +1,35 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-bg: #0a0a0a;
+  --color-surface-2: #1a1a1a;
+  --color-surface-3: #2e2e2e;
+  --color-text: #c0c0c0;
+  --color-accent: #ffffff;
+  --font-display: "Cormorant Garamond", "Playfair Display", ui-serif, Georgia, serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+:root {
+  --background: #0a0a0a;
+  --foreground: #c0c0c0;
+}
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  background: #0a0a0a;
+  color: #c0c0c0;
+  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.font-display {
+  font-family: var(--font-display);
+}
+.font-mono {
+  font-family: var(--font-mono);
+}

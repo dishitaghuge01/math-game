@@ -1,0 +1,3 @@
+# Supermemory
+
+Placeholder infrastructure directory.
