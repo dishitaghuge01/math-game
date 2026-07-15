@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import { createInitialVector } from '../../core-math/src/decisionVector.js';
+import { createInitialVector } from '@math-game/core-math';
 
 import { TERRAIN_BASE_AMPLITUDE, TERRAIN_BASE_FREQUENCY, terrainAmplitude, terrainFrequency } from './constants.js';
 import { createSimplexNoise2D } from './noise.js';
 import { generateHeightmap } from './terrain.js';
-import { WaveFunctionCollapse } from './wfc.js';
+import { WaveFunctionCollapse, WfcCollapseError } from './wfc.js';
 import { generateDungeonLayout } from './dungeon.js';
 
 describe('world-gen', () => {
@@ -18,6 +18,14 @@ describe('world-gen', () => {
 
     const different = createSimplexNoise2D(43);
     expect(different(1.2, -0.7)).not.toBeCloseTo(firstValue, 8);
+  });
+
+  it('createSimplexNoise2D interpolates within a unit cell', () => {
+    const noise = createSimplexNoise2D(99);
+    const samples = Array.from({ length: 5 }, (_, index) => noise(0.5, 0.2 * index + 0.1));
+    const average = samples.reduce((sum, value) => sum + value, 0) / samples.length;
+    const variance = samples.reduce((sum, value) => sum + (value - average) ** 2, 0) / samples.length;
+    expect(variance).toBeGreaterThan(1e-4);
   });
 
   it('generateHeightmap is deterministic and normalized', () => {
@@ -33,6 +41,12 @@ describe('world-gen', () => {
         expect(value).toBeLessThanOrEqual(1);
       }
     }
+  });
+
+  it('terrain clipping stays away from hard ceilings at max amplitude', () => {
+    const heights = generateHeightmap(321, 6, 6, { width: 6, height: 6, riskTolerance: 1, volatility: 1, curiosity: 0.2 });
+    const saturated = heights.flat().filter((value) => value === 1 || value === 0);
+    expect(saturated.length / heights.flat().length).toBeLessThan(0.15);
   });
 
   it('terrainAmplitude and terrainFrequency match the documented formulas', () => {
@@ -79,6 +93,35 @@ describe('world-gen', () => {
         }
       }
     }
+  });
+
+  it('wave function collapse throws on unsatisfiable constraints', () => {
+    const tileset = [
+      { id: 'A', weight: 1 },
+      { id: 'B', weight: 1 },
+    ];
+    const adjacencyRules = {
+      A: { north: ['B'], south: ['B'], east: ['B'], west: ['B'] },
+      B: { north: [], south: [], east: [], west: [] },
+    };
+
+    const wfc = new WaveFunctionCollapse(tileset, adjacencyRules, 2, 2);
+    expect(() => wfc.collapse(11)).toThrow(WfcCollapseError);
+  });
+
+  it('generateDungeonLayout preserves most requested rooms', () => {
+    const vector = createInitialVector();
+    vector.riskTolerance = 1;
+    vector.aggression = 1;
+    vector.socialAffinity = 0.2;
+    vector.curiosity = 0.2;
+
+    const survivals = Array.from({ length: 50 }, (_, seed) => {
+      const layout = generateDungeonLayout(seed, vector);
+      return layout.rooms.length / 9;
+    });
+    const averageSurvival = survivals.reduce((sum, value) => sum + value, 0) / survivals.length;
+    expect(averageSurvival).toBeGreaterThan(0.85);
   });
 
   it('generateDungeonLayout is deterministic and connected', () => {

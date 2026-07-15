@@ -1,4 +1,11 @@
-import { mulberry32, seededChoice, seededRange } from '../../core-math/src/prng.js';
+import { mulberry32, seededChoice, seededRange } from '@math-game/core-math';
+
+export class WfcCollapseError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'WfcCollapseError';
+  }
+}
 
 export interface Tile {
   id: string;
@@ -31,7 +38,10 @@ export class WaveFunctionCollapse {
     const grid: Grid = Array.from({ length: this.height }, () => Array.from({ length: this.width }, () => ''));
 
     const solved = this.search(rng, possibilities, grid);
-    return solved ?? this.fallbackGrid();
+    if (!solved) {
+      throw new WfcCollapseError(`Wave function collapse failed for a ${this.width}x${this.height} grid with the supplied adjacency rules.`);
+    }
+    return solved;
   }
 
   private search(rng: () => number, possibilities: string[][][], grid: Grid): Grid | null {
@@ -142,9 +152,4 @@ export class WaveFunctionCollapse {
     return best;
   }
 
-  private fallbackGrid(): Grid {
-    return Array.from({ length: this.height }, (_, y) =>
-      Array.from({ length: this.width }, (_, x) => this.tileset[0].id),
-    );
-  }
 }

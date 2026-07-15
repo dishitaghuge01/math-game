@@ -1,6 +1,5 @@
-import { type DecisionVector } from '../../core-math/src/decisionVector.js';
-import { mulberry32, seededRange } from '../../core-math/src/prng.js';
-import { deriveSeed } from '../../core-math/src/seed.js';
+import { type DecisionVector } from '@math-game/core-math';
+import { mulberry32, seededRange } from '@math-game/core-math';
 
 import { DEFAULT_OCTAVES, DEFAULT_PERSISTENCE, terrainAmplitude, terrainFrequency } from './constants.js';
 import { createSimplexNoise2D, fractalNoise2D } from './noise.js';
@@ -34,10 +33,16 @@ export function generateHeightmap(
       const sample = fractalNoise2D(noise, x, y, octaves, persistence, frequency);
       const normalized = (sample + 1) / 2;
       const jitter = seededRange(rng, -0.05, 0.05);
-      row.push(Math.max(0, Math.min(1, normalized * (1 + amplitude) + jitter)));
+      const centered = normalized - 0.5;
+      const scaled = centered * (1 + amplitude);
+      row.push(clamp(0.5 + scaled + jitter, 0, 1));
     }
     heights.push(row);
   }
 
   return heights;
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
 }

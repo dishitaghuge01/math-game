@@ -1,6 +1,4 @@
-import { type DecisionVector } from '../../core-math/src/decisionVector.js';
-import { mulberry32, seededChoice, seededRange } from '../../core-math/src/prng.js';
-import { sigmoid } from '../../core-math/src/mappingFunctions.js';
+import { type DecisionVector, mulberry32, seededChoice, seededRange, sigmoid } from '@math-game/core-math';
 
 export interface DungeonGraph {
   rooms: Array<{ id: string; x: number; y: number; w: number; h: number }>;
@@ -11,22 +9,38 @@ export function generateDungeonLayout(seed: number, vector: DecisionVector): Dun
   const rng = mulberry32(seed);
   const baseRoomCount = 6 + Math.round(sigmoid(vector.riskTolerance + vector.aggression) * 4);
   const roomCount = Math.max(3, Math.min(10, baseRoomCount));
-  const rooms = Array.from({ length: roomCount }, (_, index) => {
-    const x = Math.round(seededRange(rng, 0, 10));
-    const y = Math.round(seededRange(rng, 0, 10));
-    const w = 1 + Math.round(seededRange(rng, 1, 3));
-    const h = 1 + Math.round(seededRange(rng, 1, 3));
-    return { id: `room-${index}`, x, y, w, h };
-  });
+  const rooms = Array.from({ length: roomCount }, (_, index) => ({
+    id: `room-${index}`,
+    x: 0,
+    y: 0,
+    w: 0,
+    h: 0,
+  }));
 
-  const nonOverlapping = [] as typeof rooms;
+  const placedRooms: typeof rooms = [];
+  const maxPlacementAttempts = 20;
   for (const room of rooms) {
-    if (nonOverlapping.every((candidate) => !roomsOverlap(candidate, room))) {
-      nonOverlapping.push(room);
+    let placed = false;
+    for (let attempt = 0; attempt < maxPlacementAttempts; attempt += 1) {
+      const candidate = {
+        ...room,
+        x: Math.round(seededRange(rng, 0, 10)),
+        y: Math.round(seededRange(rng, 0, 10)),
+        w: 1 + Math.round(seededRange(rng, 1, 3)),
+        h: 1 + Math.round(seededRange(rng, 1, 3)),
+      };
+      if (placedRooms.every((existing) => !roomsOverlap(existing, candidate))) {
+        placedRooms.push(candidate);
+        placed = true;
+        break;
+      }
+    }
+    if (!placed) {
+      continue;
     }
   }
 
-  const finalRooms = nonOverlapping.length > 0 ? nonOverlapping : rooms;
+  const finalRooms = placedRooms.length > 0 ? placedRooms : rooms;
   const roomCenters = finalRooms.map((room) => ({ id: room.id, x: room.x + room.w / 2, y: room.y + room.h / 2 }));
   const edges: Array<{ from: string; to: string }> = [];
   for (let index = 1; index < roomCenters.length; index += 1) {
