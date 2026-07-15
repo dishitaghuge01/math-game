@@ -1,10 +1,10 @@
 import 'dotenv/config';
 import express, { type NextFunction, type Request, type Response } from 'express';
 
-import decisionRouter from './routes/decision';
-import worldRouter from './routes/generate/world';
-import narrativeRouter from './routes/generate/narrative';
-import mechanicsRouter from './routes/generate/mechanics';
+import decisionRouter from './routes/decision.js';
+import worldRouter from './routes/generate/world.js';
+import narrativeRouter from './routes/generate/narrative.js';
+import mechanicsRouter from './routes/generate/mechanics.js';
 
 const app = express();
 app.use(express.json());

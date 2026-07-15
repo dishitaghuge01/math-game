@@ -1,6 +1,6 @@
 import { Router, type NextFunction, type Request, type Response } from 'express';
 
-import { generateWorldChunk } from '../../services/gameStateService';
+import { generateWorldChunk } from '../../services/gameStateService.js';
 
 const router: ReturnType<typeof Router> = Router();
 

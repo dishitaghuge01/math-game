@@ -4,7 +4,8 @@ import { generatePlotSkeleton, narrateNode, generateChoicesForNode, narrateChoic
 import { enemyStatsFor, lootWeights } from '@math-game/mechanics-gen';
 import { SupermemoryClient } from '@math-game/memory-client';
 
-import * as sessionStore from './sessionStore';
+import { saveVectorSnapshot } from '../persistence/sessionRepository.js';
+import * as sessionStore from './sessionStore.js';
 
 const HEIGHT_THRESHOLD_LOW = 0.25;
 const HEIGHT_THRESHOLD_MEDIUM = 0.5;
@@ -34,15 +35,18 @@ export function resolveChoiceImpact(sessionId: string, narrativeNodeId: string, 
   // Parse node index from narrativeNodeId (format: "{sessionId}:{nodeIndex}")
   const match = narrativeNodeId.match(new RegExp(`^${escapeRegExp(sessionId)}:(\\d+)$`));
   if (!match) {
-    throw new Error(`Invalid narrativeNodeId format: ${narrativeNodeId}. Expected "{sessionId}:{nodeIndex}".`);
+    const error = new Error(`Invalid narrativeNodeId format: ${narrativeNodeId}. Expected "{sessionId}:{nodeIndex}".`) as Error & { status?: number };
+    error.status = 400;
+    throw error;
   }
   nodeIndex = Number(match[1]);
 
   // Regenerate choices deterministically using the CURRENT session vector
   // (before this decision is applied — this is crucial for reproducibility)
-  const choicesSeed = deriveSeed(session.vector, sessionId, `narrative:node:${nodeIndex}:choices`);
-  const beats = generatePlotSkeleton(session.vector, mulberry32(choicesSeed), nodeIndex + 1);
+  const seed = deriveSeed(session.vector, sessionId, `narrative:node:${nodeIndex}`);
+  const beats = generatePlotSkeleton(session.vector, mulberry32(seed), nodeIndex + 1);
   const node = beats[beats.length - 1];
+  const choicesSeed = deriveSeed(session.vector, sessionId, `narrative:node:${nodeIndex}:choices`);
 
   if (!node) {
     throw new Error(`Could not generate plot node at index ${nodeIndex}`);
@@ -52,7 +56,9 @@ export function resolveChoiceImpact(sessionId: string, narrativeNodeId: string, 
   const option = options.find((o) => o.id === choiceId);
 
   if (!option) {
-    throw new Error(`Unknown choiceId "${choiceId}" for narrativeNodeId "${narrativeNodeId}". Valid options: ${options.map((o) => o.id).join(', ')}`);
+    const error = new Error(`Unknown choiceId "${choiceId}" for narrativeNodeId "${narrativeNodeId}". Valid options: ${options.map((o) => o.id).join(', ')}`) as Error & { status?: number };
+    error.status = 400;
+    throw error;
   }
 
   return option.impact;
@@ -78,6 +84,9 @@ export async function applyDecision(
   const prevVector = session.vector;
   const nextVector = updateVector(prevVector, impact);
   sessionStore.updateSession(sessionId, nextVector);
+
+  const nextNodeIndex = sessionStore.incrementNodeIndex(sessionId);
+  saveVectorSnapshot(sessionId, nextNodeIndex, nextVector);
 
   const vectorDelta: Partial<DecisionVector> = {};
   for (const field of SCALAR_VECTOR_FIELDS) {
@@ -110,15 +119,14 @@ export async function applyDecision(
     console.error('Failed to persist decision memory', error);
   });
 
-  const nodeIndex = sessionStore.incrementNodeIndex(sessionId);
-  const seed = deriveSeed(nextVector, sessionId, `narrative:node:${nodeIndex}`);
+  const seed = deriveSeed(nextVector, sessionId, `narrative:node:${nextNodeIndex}`);
   const nextNode = generatePlotSkeleton(nextVector, mulberry32(seed), 1)[0];
 
   return {
     vector: nextVector,
     vectorDelta,
     allegianceDelta,
-    nextNodeId: nextNode?.id ?? `${sessionId}:${nodeIndex}`,
+    nextNodeId: nextNode?.id ?? `${sessionId}:${nextNodeIndex}`,
   };
 }
 

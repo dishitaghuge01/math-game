@@ -1,5 +1,6 @@
-// Temporary in-memory session state ONLY — Phase 11 replaces this with Postgres/SQLite.
+// In-memory cache over SQLite-backed persistence so restarts can resume sessions.
 import { createInitialVector, type DecisionVector } from '@math-game/core-math';
+import { getInitialVectorForSession, saveSession, saveVectorSnapshot } from '../persistence/sessionRepository.js';
 
 export interface SessionState {
   vector: DecisionVector;
@@ -15,10 +16,11 @@ export function getOrCreateSession(sessionId: string, userId: string): SessionSt
     return existing;
   }
 
+  const persisted = getInitialVectorForSession(sessionId, userId);
   const state: SessionState = {
-    vector: createInitialVector(),
-    nodeIndex: 0,
-    userId,
+    vector: persisted.vector,
+    nodeIndex: persisted.nodeIndex,
+    userId: persisted.userId,
   };
   sessions.set(sessionId, state);
   return state;
@@ -31,6 +33,8 @@ export function updateSession(sessionId: string, vector: DecisionVector): void {
   }
 
   session.vector = vector;
+  saveSession(sessionId, session.userId);
+  saveVectorSnapshot(sessionId, session.nodeIndex, vector);
 }
 
 export function incrementNodeIndex(sessionId: string): number {

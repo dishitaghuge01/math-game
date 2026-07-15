@@ -1,6 +1,6 @@
 import { Router, type NextFunction, type Request, type Response } from 'express';
 
-import { generateNarrativeNode } from '../../services/gameStateService';
+import { generateNarrativeNode } from '../../services/gameStateService.js';
 
 const router: ReturnType<typeof Router> = Router();
 
