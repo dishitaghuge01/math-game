@@ -4,6 +4,11 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "tsc -p tsconfig.json --noEmit"
+    "build": "tsc -b tsconfig.json",
+    "test": "vitest run"
+  }
+  ,
+  "dependencies": {
+    "@math-game/core-math": "workspace:*"
   }
 }

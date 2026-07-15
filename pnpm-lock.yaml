@@ -254,7 +254,11 @@ importers:
         specifier: ^16.4.2
         version: 16.6.1
 
-  packages/narrative-gen: {}
+  packages/narrative-gen:
+    dependencies:
+      '@math-game/core-math':
+        specifier: workspace:*
+        version: link:../core-math
 
   packages/world-gen:
     dependencies:

@@ -4,11 +4,19 @@
     "rootDir": "src",
     "outDir": "dist",
     "composite": true,
+    "baseUrl": ".",
+    "paths": {
+      "@math-game/core-math": ["../core-math/dist/index.js", "../core-math/src/index.ts"]
+    },
     "lib": [
       "ES2022"
     ]
   },
   "include": [
     "src"
+  ]
+  ,
+  "references": [
+    { "path": "../core-math" }
   ]
 }
