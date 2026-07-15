@@ -77,15 +77,21 @@ function RadarChart({ vector }: { vector: Vector }) {
   );
 }
 
-function Sparkline() {
-  const pts = [4, 12, 6, 18, 10, 22, 14, 8, 20, 30, 16, 26, 12, 34, 20];
+function Sparkline({ volatility }: { volatility: number }) {
+  const points = Array.from({ length: 12 }, (_, index) => {
+    const wave = Math.sin((index / 3) * Math.PI + volatility * 2) * 0.5;
+    const trend = (volatility - 0.5) * 0.25;
+    const value = 0.35 + 0.3 * Math.sin(index * 0.7 + volatility * 3) + wave + trend;
+    return Math.max(0.05, Math.min(0.95, value));
+  });
+
   const w = 320;
   const h = 60;
-  const step = w / (pts.length - 1);
-  const max = Math.max(...pts);
-  const path = pts
-    .map((p, i) => `${i === 0 ? "M" : "L"} ${i * step} ${h - (p / max) * h}`)
+  const step = w / (points.length - 1);
+  const path = points
+    .map((p, i) => `${i === 0 ? "M" : "L"} ${i * step} ${h - p * h}`)
     .join(" ");
+
   return (
     <svg width="100%" height={h} viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none">
       <path d={path} fill="none" stroke="#ffffff" strokeWidth={1} />
@@ -165,7 +171,7 @@ export function CharacterSheetScene({ vector, volatility, allegiance }: Props) {
             <span style={{ color: "#ffffff", letterSpacing: 1 }}>VOLATILITY_CORE</span>
             <span style={{ color: "#ffffff" }}>{Math.round(volatility * 100)}%</span>
           </div>
-          <Sparkline />
+          <Sparkline volatility={volatility} />
           <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#c0c0c0", marginTop: 4 }}>
             <span>STABLE</span>
             <span>CRITICAL_THRESHOLD</span>
