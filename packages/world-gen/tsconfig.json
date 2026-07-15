@@ -4,7 +4,6 @@
     "rootDir": "src",
     "outDir": "dist",
     "composite": true,
-    "baseUrl": ".",
     "paths": {
       "@math-game/core-math": [
         "../core-math/src/index.ts"
