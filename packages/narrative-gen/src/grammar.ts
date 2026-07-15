@@ -1,5 +1,5 @@
 import type { DecisionVector } from '@math-game/core-math';
-import { softmax, dotProduct } from '@math-game/core-math';
+import { W_TONE, softmax, dotProduct } from '@math-game/core-math';
 
 export type Symbol = string;
 
@@ -29,8 +29,6 @@ export class StoryGrammar {
 }
 
 export function toneWeights(vector: DecisionVector): Record<string, number> {
-  const { W_TONE } = require('@math-game/core-math');
-
   const toneKeys = Object.keys(W_TONE);
   const scores = toneKeys.map((tone) => dotProduct(W_TONE[tone] as Record<string, number>, vector as unknown as Record<string, number>));
   const weights = softmax(scores);

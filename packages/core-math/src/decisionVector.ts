@@ -1,4 +1,4 @@
-import { ALPHA_SMOOTHING, BETA_VOLATILITY } from './constants.js';
+import { ALPHA_SMOOTHING, BETA_VOLATILITY } from './constants';
 
 export interface DecisionVector {
   morality: number;

@@ -1,4 +1,4 @@
-import type { DecisionVector } from './decisionVector.js';
+import type { DecisionVector } from './decisionVector';
 
 export const ALPHA_SMOOTHING = 0.20;
 export const BETA_VOLATILITY = 0.30;

@@ -1,5 +1,5 @@
-import type { DecisionVector } from './decisionVector.js';
-import { fnv1a } from './hash.js';
+import type { DecisionVector } from './decisionVector';
+import { fnv1a } from './hash';
 
 export function deriveSeed(vector: DecisionVector, sessionId: string, namespace: string): number {
   // JSON.stringify on objects can silently vary across construction order, so use a
