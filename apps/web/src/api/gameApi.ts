@@ -7,7 +7,6 @@ export async function postDecision(
   choiceId: string,
   choiceLabel: string,
   narrativeNodeId: string,
-  impact: Partial<DecisionVector>,
 ): Promise<{
   vectorDelta: Partial<DecisionVector>;
   allegianceDelta: Allegiance;
@@ -26,7 +25,6 @@ export async function postDecision(
         choiceId,
         choiceLabel,
         narrativeNodeId,
-        impact,
       }),
     });
 

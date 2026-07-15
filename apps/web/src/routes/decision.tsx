@@ -20,18 +20,12 @@ function DecisionRoute() {
       return;
     }
 
-    // TODO: impact vector is missing from UI choices — this is a gap between UI and server.
-    // UI only has id/label/description; server needs Partial<DecisionVector> impact.
-    // Currently passing empty impact object as placeholder. This needs to be resolved
-    // before Phase 10 is production-ready.
-    const impact: Record<string, unknown> = {};
-
     try {
-      const res = await postDecision(choiceId, choice.label, "current_node", impact);
+      const res = await postDecision(choiceId, choice.label, narrative.id);
       applyVectorDelta(res.vectorDelta);
       applyAllegianceDelta(res.allegianceDelta);
       const next = await getNarrativeNode(res.nextNodeId);
-      setNarrative(next);
+      setNarrative({ ...next, id: res.nextNodeId });
       navigate({ to: "/character" });
     } catch (error) {
       console.error("Failed to apply decision:", error);

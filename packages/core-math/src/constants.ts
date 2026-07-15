@@ -62,3 +62,15 @@ export const W_TONE: Record<string, Partial<Record<keyof DecisionVector, number>
     morality: 0.2,
   },
 };
+
+export const CHOICE_ARCHETYPE_IMPACT: Record<
+  string,
+  Partial<Pick<DecisionVector, 'morality' | 'aggression' | 'curiosity' | 'riskTolerance' | 'socialAffinity'>>
+> = {
+  cruel: { morality: -0.6, aggression: 0.2 },
+  kind: { morality: 0.6, socialAffinity: 0.2 },
+  risky: { riskTolerance: 0.6, aggression: 0.2 },
+  cautious: { riskTolerance: -0.6, curiosity: -0.1 },
+  social: { socialAffinity: 0.6, curiosity: 0.1 },
+  solo: { socialAffinity: -0.6, riskTolerance: 0.1 },
+};

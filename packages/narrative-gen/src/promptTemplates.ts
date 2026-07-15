@@ -35,4 +35,18 @@ export function buildNarrationPrompt(node: PlotNode, memory: MemorySnippet[], ve
   return [header, vectorSummary, '', memorySection, '', instruction, '', 'Narration:'].join('\n');
 }
 
+export function buildChoiceNarrationPrompt(node: PlotNode, archetype: string, vector: DecisionVector): string {
+  const header = `Choice narration task — node: ${node.symbol}, tone: ${archetype}\nNode tokens: ${node.tokens.join(' ')}\n`;
+  const vectorSummary = `Player state summary: ${formatVector(vector)}.`;
+
+  const instruction = [
+    'Instructions:',
+    `Produce only a short label (2-4 words, ALL_CAPS_WITH_UNDERSCORES style matching existing UI choices like TRUST_THE_SIGNAL) and a one-sentence description for a player choice with tone '${archetype}'.`,
+    "Do NOT invent plot facts beyond the node's tokens.",
+    'Return strictly as JSON: {"label": "...", "description": "..."}.',
+  ].join('\n');
+
+  return [header, vectorSummary, '', instruction, '', 'Response:'].join('\n');
+}
+
 export default buildNarrationPrompt;

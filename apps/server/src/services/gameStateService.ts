@@ -1,6 +1,6 @@
 import { deriveSeed, mulberry32, type DecisionVector, updateVector } from '@math-game/core-math';
 import { generateHeightmap } from '@math-game/world-gen';
-import { generatePlotSkeleton, narrateNode } from '@math-game/narrative-gen';
+import { generatePlotSkeleton, narrateNode, generateChoicesForNode, narrateChoice } from '@math-game/narrative-gen';
 import { enemyStatsFor, lootWeights } from '@math-game/mechanics-gen';
 import { SupermemoryClient } from '@math-game/memory-client';
 
@@ -23,14 +23,57 @@ const SCALAR_VECTOR_FIELDS: Array<keyof Pick<DecisionVector, 'morality' | 'aggre
   'socialAffinity',
 ];
 
+/**
+ * Resolve choice impact server-side by deterministically regenerating the choice list
+ * using the session's current vector state. This ensures the client never supplies impact values.
+ */
+export function resolveChoiceImpact(sessionId: string, narrativeNodeId: string, choiceId: string): Partial<Pick<DecisionVector, 'morality' | 'aggression' | 'curiosity' | 'riskTolerance' | 'socialAffinity'>> {
+  const session = sessionStore.getOrCreateSession(sessionId, sessionId);
+  let nodeIndex = session.nodeIndex;
+
+  // Parse node index from narrativeNodeId (format: "{sessionId}:{nodeIndex}")
+  const match = narrativeNodeId.match(new RegExp(`^${escapeRegExp(sessionId)}:(\\d+)$`));
+  if (!match) {
+    throw new Error(`Invalid narrativeNodeId format: ${narrativeNodeId}. Expected "{sessionId}:{nodeIndex}".`);
+  }
+  nodeIndex = Number(match[1]);
+
+  // Regenerate choices deterministically using the CURRENT session vector
+  // (before this decision is applied — this is crucial for reproducibility)
+  const choicesSeed = deriveSeed(session.vector, sessionId, `narrative:node:${nodeIndex}:choices`);
+  const beats = generatePlotSkeleton(session.vector, mulberry32(choicesSeed), nodeIndex + 1);
+  const node = beats[beats.length - 1];
+
+  if (!node) {
+    throw new Error(`Could not generate plot node at index ${nodeIndex}`);
+  }
+
+  const options = generateChoicesForNode(node, mulberry32(choicesSeed), 3);
+  const option = options.find((o) => o.id === choiceId);
+
+  if (!option) {
+    throw new Error(`Unknown choiceId "${choiceId}" for narrativeNodeId "${narrativeNodeId}". Valid options: ${options.map((o) => o.id).join(', ')}`);
+  }
+
+  return option.impact;
+}
+
 export async function applyDecision(
   sessionId: string,
   userId: string,
   choiceId: string,
   choiceLabel: string,
   narrativeNodeId: string,
-  impact: Partial<DecisionVector>,
 ): Promise<{ vector: DecisionVector; vectorDelta: Partial<DecisionVector>; allegianceDelta: Record<string, number>; nextNodeId: string }> {
+  // Resolve impact server-side from (seed, node, choiceId)
+  const scalarImpact = resolveChoiceImpact(sessionId, narrativeNodeId, choiceId);
+  
+  // Choices only affect scalar fields; allegiance is never influenced by choices
+  const impact: Partial<DecisionVector> = {
+    ...scalarImpact,
+    allegiance: {},
+  };
+
   const session = sessionStore.getOrCreateSession(sessionId, userId);
   const prevVector = session.vector;
   const nextVector = updateVector(prevVector, impact);
@@ -107,7 +150,10 @@ export function generateWorldChunk(sessionId: string, chunkId: string): {
   };
 }
 
-export async function generateNarrativeNode(sessionId: string, nodeId: string): Promise<{ narrative: string; choices: [] }> {
+export async function generateNarrativeNode(
+  sessionId: string,
+  nodeId: string,
+): Promise<{ narrative: string; choices: Array<{ id: string; label: string; description: string }> }> {
   // TODO: proper userId threading is a Phase 10 concern once auth exists.
   const session = sessionStore.getOrCreateSession(sessionId, sessionId);
   let nodeIndex = session.nodeIndex;
@@ -124,13 +170,40 @@ export async function generateNarrativeNode(sessionId: string, nodeId: string): 
   const node = beats[beats.length - 1];
 
   const memory = await supermemoryClient.search(sessionId, node?.symbol ?? 'story', 5).catch(() => []);
-  const prose = await narrateNode(node ?? { id: `${sessionId}:${nodeIndex}`, symbol: 'STORY', tokens: [] }, memory, session.vector);
+  const prose = await narrateNode(
+    node ?? { id: `${sessionId}:${nodeIndex}`, symbol: 'STORY', tokens: [] },
+    memory,
+    session.vector,
+  );
 
-  // TODO(design): choice generation from PlotNode is unspecified in docs/math-model.md — needs
-  // a decision from the project owner before this can be implemented, not something to invent here.
+  // Generate choices deterministically from (node, vector, rng)
+  const choicesSeed = deriveSeed(session.vector, sessionId, `narrative:node:${nodeIndex}:choices`);
+  const choiceOptions = generateChoicesForNode(
+    node ?? { id: `${sessionId}:${nodeIndex}`, symbol: 'STORY', tokens: [] },
+    mulberry32(choicesSeed),
+    3,
+  );
+
+  // Narrate each choice option (flavor text only — archetype is tone hint, not part of response)
+  const narratedChoices = await Promise.all(
+    choiceOptions.map((option) =>
+      narrateChoice(
+        node ?? { id: `${sessionId}:${nodeIndex}`, symbol: 'STORY', tokens: [] },
+        option.archetype,
+        session.vector,
+      ),
+    ),
+  );
+
+  const choices = choiceOptions.map((option, i) => ({
+    id: option.id,
+    label: narratedChoices[i].label,
+    description: narratedChoices[i].description,
+  }));
+
   return {
     narrative: prose,
-    choices: [],
+    choices,
   };
 }
 

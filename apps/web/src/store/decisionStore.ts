@@ -17,6 +17,7 @@ export interface NarrativeChoice {
 }
 
 export interface NarrativeNode {
+  id: string;
   narrative: string;
   choices: NarrativeChoice[];
 }
@@ -63,6 +64,7 @@ export const useDecisionStore = create<DecisionState>((set) => ({
   allegiance: { CONCLAVE: 0.62, SYNDICATE: -0.38, WARDENS: 0.15, NULL_CHURCH: -0.72 },
   world: initialWorld,
   narrative: {
+    id: "bootstrap:0",
     narrative:
       "The signal fractures across the lattice. A voice, or the memory of one, asks you to choose. Every path rewrites what you were.",
     choices: [
