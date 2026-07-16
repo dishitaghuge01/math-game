@@ -18,10 +18,11 @@
 - Visuals use a coherent 2D illustrated SVG cut-paper-and-ink style. Generation Rules compose terrain, landmarks, party portraits and silhouettes, enemy forms, item icons, and region UI motifs from an authored shape and texture library plus the World Seed.
 - Expeditions auto-save locally and server-side. An Expedition Code serializes the initial World Seed with compact choice and action history so it can be replayed exactly or imported to branch into a different outcome. Accounts are out of scope for the first version.
 - The five player-facing Expedition Traits are Mercy, Resolve, Curiosity, Defiance, and Kinship. They are the interpretations of the Choice Vector that shape procedural content.
+- Canonical story facts—regions, factions, character arcs, quests, discoveries, consequences, and endings—are produced by deterministic Generation Rules and a seeded narrative grammar. An optional LLM may polish those established facts into prose, but cannot introduce canonical facts or outcomes.
 
 ## Open decisions
 
-- Story-generation constraints
+- Party origin and personality model
 - Choice Vector dimensions and how players perceive them
 - Campaign structure and ending conditions
 - Procedural asset style and production pipeline

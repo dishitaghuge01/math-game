@@ -63,3 +63,7 @@ _Avoid_: save file, share link
 **Mercy, Resolve, Curiosity, Defiance, and Kinship**:
 The five Expedition Traits through which a player sees their Choice Vector. Together they are the forces that shape an Expedition’s generated content.
 _Avoid_: morality, alignment axes
+
+**Narrative Grammar**:
+The deterministic rules that turn canonical Expedition facts into story events, dialogue intents, and outcomes. It cannot create facts outside the Expedition State.
+_Avoid_: story AI, chatbot
