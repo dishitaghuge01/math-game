@@ -200,7 +200,7 @@ class OverworldScene extends Phaser.Scene {
     overlay.add(this.add.rectangle(VIEW_WIDTH / 2, VIEW_HEIGHT / 2, VIEW_WIDTH, VIEW_HEIGHT, 0x12111b, 0.94));
     overlay.add(this.add.rectangle(104, 134, 116, 116, social ? 0x668e75 : 0x5596a3).setStrokeStyle(4, 0xf4deb0));
     overlay.add(this.add.text(182, 78, title, { fontFamily: "monospace", fontSize: "18px", color: "#f4deb0" }));
-    overlay.add(this.add.text(182, 116, line, { fontFamily: "monospace", fontSize: "14px", color: "#ffffff", lineSpacing: 8 }));
+    overlay.add(this.addTypewriterText(182, 116, line));
     choices.forEach(([label, action], index) => {
       const option = this.add.text(180, 250 + index * 48, label, { fontFamily: "monospace", fontSize: "15px", color: "#f4deb0", backgroundColor: "#30283a", padding: { x: 10, y: 8 } }).setInteractive({ useHandCursor: true });
       option.on("pointerdown", () => this.submit(action));
@@ -208,6 +208,22 @@ class OverworldScene extends Phaser.Scene {
       this.input.keyboard!.once(index === 0 ? "keydown-ONE" : "keydown-TWO", () => this.submit(action));
     });
     overlay.add(this.add.text(VIEW_WIDTH / 2, 390, "PRESS 1 OR 2", { fontFamily: "monospace", fontSize: "11px", color: "#b6a37c" }).setOrigin(0.5));
+  }
+
+  private addTypewriterText(x: number, y: number, line: string) {
+    const text = this.add.text(x, y, "", { fontFamily: "monospace", fontSize: "14px", color: "#ffffff", lineSpacing: 8 });
+    let cursor = 0;
+    const reveal = () => {
+      cursor += 1;
+      text.setText(line.slice(0, cursor));
+      if (cursor >= line.length) timer.remove(false);
+    };
+    const timer = this.time.addEvent({ delay: 18, repeat: line.length - 1, callback: reveal });
+    this.input.keyboard!.once("keydown-SPACE", () => {
+      timer.remove(false);
+      text.setText(line);
+    });
+    return text;
   }
 
   private openBattle() {
