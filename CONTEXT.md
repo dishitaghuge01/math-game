@@ -67,3 +67,7 @@ _Avoid_: morality, alignment axes
 **Narrative Grammar**:
 The deterministic rules that turn canonical Expedition facts into story events, dialogue intents, and outcomes. It cannot create facts outside the Expedition State.
 _Avoid_: story AI, chatbot
+
+**Party Origin**:
+The seeded set of each Expedition Party member’s visual identity, combat role, personal motive, and initial interpersonal tensions.
+_Avoid_: character creation, companion recruitment

@@ -19,10 +19,11 @@
 - Expeditions auto-save locally and server-side. An Expedition Code serializes the initial World Seed with compact choice and action history so it can be replayed exactly or imported to branch into a different outcome. Accounts are out of scope for the first version.
 - The five player-facing Expedition Traits are Mercy, Resolve, Curiosity, Defiance, and Kinship. They are the interpretations of the Choice Vector that shape procedural content.
 - Canonical story facts—regions, factions, character arcs, quests, discoveries, consequences, and endings—are produced by deterministic Generation Rules and a seeded narrative grammar. An optional LLM may polish those established facts into prose, but cannot introduce canonical facts or outcomes.
+- Each Expedition begins with all three procedurally generated party members. The World Seed establishes each member’s visual identity, combat role, personal motive, and initial tensions; player choices and combat use develop or strain their relationships.
 
 ## Open decisions
 
-- Party origin and personality model
+- Combat role model
 - Choice Vector dimensions and how players perceive them
 - Campaign structure and ending conditions
 - Procedural asset style and production pipeline
