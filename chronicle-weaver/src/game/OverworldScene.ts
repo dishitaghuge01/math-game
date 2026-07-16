@@ -136,14 +136,15 @@ export class OverworldScene extends Phaser.Scene {
     for (let x = 928; x <= 1216; x += 32) walls.create(x, 544, "wall");
 
     const current = this.expedition.region.currentLocationId;
-    this.player = this.physics.add.sprite(128, WORLD_HEIGHT - 128, "fighter-step-a").setDepth(5).play("fighter-walk");
-    this.player.setCollideWorldBounds(true).setSize(12, 12).setOffset(2, 6);
-    this.physics.add.collider(this.player, walls);
-    this.followers = this.expedition.party.slice(1).map((member, index) => this.add.sprite(104 - index * 18, WORLD_HEIGHT - 120, `${member.role}-step-a`).setDepth(4).play(`${member.role}-walk`));
-    this.add.text(12, 54, this.expedition.party.map((member) => `${member.name} ${member.health}/${member.maxHealth}`).join("  "), { fontFamily: "monospace", fontSize: "10px", color: "#f4deb0" }).setScrollFactor(0).setDepth(20);
-
     const visible = this.expedition.region.locations.filter((location) => location.revealed || location.id === current);
     const positions = [[160, 160], [550, 180], [970, 220], [1320, 340], [1050, 660], [600, 640], [200, 580]];
+    const currentIndex = visible.findIndex((location) => location.id === current);
+    const [spawnX, spawnY] = positions[currentIndex] ?? [160, 160];
+    this.player = this.physics.add.sprite(spawnX, spawnY + 42, "fighter-step-a").setDepth(5).play("fighter-walk");
+    this.player.setCollideWorldBounds(true).setSize(12, 12).setOffset(2, 6);
+    this.physics.add.collider(this.player, walls);
+    this.followers = this.expedition.party.slice(1).map((member, index) => this.add.sprite(spawnX - 20 - index * 18, spawnY + 50, `${member.role}-step-a`).setDepth(4).play(`${member.role}-walk`));
+    this.add.text(12, 54, this.expedition.party.map((member) => `${member.name} ${member.health}/${member.maxHealth}`).join("  "), { fontFamily: "monospace", fontSize: "10px", color: "#f4deb0" }).setScrollFactor(0).setDepth(20);
     const locationPositions = new Map(visible.map((location, index) => [location.id, positions[index] ?? [180 + index * 80, 180]]));
     const paths = this.add.graphics().setDepth(2);
     visible.forEach((location) => location.connectedTo.forEach((neighborId) => {
@@ -215,6 +216,7 @@ export class OverworldScene extends Phaser.Scene {
     const continueButton = this.add.text(VIEW_WIDTH / 2, 320, "[ CONTINUE ]", { fontFamily: "monospace", fontSize: "16px", color: "#f4deb0", backgroundColor: "#30283a", padding: { x: 12, y: 9 } }).setOrigin(0.5).setInteractive({ useHandCursor: true });
     const close = () => {
       overlay.destroy(true);
+      this.battleOpen = false;
       if (victory && this.expedition.ending) openEndingPresentation(this, this.expedition);
       if (!victory) openCampPresentation(this, this.expedition);
     };
