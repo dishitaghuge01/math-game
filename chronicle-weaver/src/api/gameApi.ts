@@ -62,6 +62,7 @@ export interface ExpeditionState {
     "mercy" | "resolve" | "curiosity" | "defiance" | "kinship",
     { tier: string; recentShift: string }
   >;
+  resources: { gold: number; experience: number; potions: number };
   majorDecisionResolved: boolean;
   ending: { title: string; summary: string } | null;
   combat: {
@@ -190,7 +191,7 @@ export async function importExpeditionCode(code: string): Promise<ExpeditionStat
 export async function postExpeditionAction(
   action:
     | { type: "travel"; destinationId: string }
-    | { type: "combat"; action: "basic" | "guard" | "signature"; dodgeHits?: number }
+    | { type: "combat"; action: "basic" | "guard" | "signature" | "item"; dodgeHits?: number }
     | { type: "discovery"; choice: "search" | "press-on" }
     | { type: "social"; choice: "share" | "command" }
     | { type: "retreat" },

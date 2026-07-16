@@ -13,7 +13,7 @@ export interface RegionLocation {
 
 export type ExpeditionAction =
   | { type: 'travel'; destinationId: string }
-  | { type: 'combat'; action: 'basic' | 'guard' | 'signature'; dodgeHits?: number }
+  | { type: 'combat'; action: 'basic' | 'guard' | 'signature' | 'item'; dodgeHits?: number }
   | { type: 'retreat' }
   | { type: 'discovery'; choice: 'search' | 'press-on' }
   | { type: 'social'; choice: 'share' | 'command' };
@@ -153,14 +153,20 @@ export function retreatToCamp(expeditionId: string): ExpeditionState {
   return state;
 }
 
-export function resolveCombatAction(expeditionId: string, action: 'basic' | 'guard' | 'signature', dodgeHits = 0): ExpeditionState {
+export function resolveCombatAction(expeditionId: string, action: 'basic' | 'guard' | 'signature' | 'item', dodgeHits = 0): ExpeditionState {
   const state = loadExpedition(expeditionId);
   if (!state) throw Object.assign(new Error('Expedition not found'), { status: 404 });
   if (!state.combat || state.combat.status !== 'active') throw Object.assign(new Error('No active Combat Encounter'), { status: 400 });
   const actingRole = state.combat.activeMemberRole;
   const actor = state.party.find((member) => member.role === actingRole)!;
   const signatureDamage: Record<PartyRole, number> = { fighter: 6, mage: 8, support: 4 };
-  const damage = action === 'signature' && actor.signatureAbility.effects.includes('damage') ? signatureDamage[actingRole] : action === 'basic' ? 4 : 1;
+  if (action === 'item' && state.resources.potions === 0) throw Object.assign(new Error('No potions remain'), { status: 400 });
+  const damage = action === 'signature' && actor.signatureAbility.effects.includes('damage') ? signatureDamage[actingRole] : action === 'basic' ? 4 : action === 'guard' ? 1 : 0;
+  if (action === 'item') {
+    state.resources.potions -= 1;
+    actor.health = Math.min(actor.maxHealth, actor.health + 7);
+    state.combat.log.push(`${actor.name} drinks a potion and recovers 7 health.`);
+  }
   if (action === 'signature' && actor.signatureAbility.effects.includes('healing')) {
     const wounded = state.party.find((member) => member.health < member.maxHealth);
     if (wounded) wounded.health = Math.min(wounded.maxHealth, wounded.health + 5);
@@ -180,7 +186,7 @@ export function resolveCombatAction(expeditionId: string, action: 'basic' | 'gua
     }
   } else {
     const target = state.party.find((member) => member.role === actingRole)!;
-    const baseDamage = action === 'guard' ? 1 : 3;
+    const baseDamage = action === 'guard' ? 1 : action === 'item' ? 2 : 3;
     const incomingDamage = baseDamage + Math.max(0, Math.floor(dodgeHits));
     target.health = Math.max(0, target.health - incomingDamage);
     state.combat.log.push(`${state.combat.enemy.name} strikes ${target.name} for ${incomingDamage} damage after ${dodgeHits} dodge hits.`);
@@ -241,7 +247,7 @@ export function isExpeditionAction(action: unknown): action is ExpeditionAction 
   if (!action || typeof action !== 'object' || !('type' in action)) return false;
   const value = action as Record<string, unknown>;
   return (value.type === 'travel' && typeof value.destinationId === 'string')
-    || (value.type === 'combat' && (value.action === 'basic' || value.action === 'guard' || value.action === 'signature') && (value.dodgeHits === undefined || (typeof value.dodgeHits === 'number' && Number.isInteger(value.dodgeHits) && value.dodgeHits >= 0)))
+    || (value.type === 'combat' && (value.action === 'basic' || value.action === 'guard' || value.action === 'signature' || value.action === 'item') && (value.dodgeHits === undefined || (typeof value.dodgeHits === 'number' && Number.isInteger(value.dodgeHits) && value.dodgeHits >= 0)))
     || value.type === 'retreat'
     || (value.type === 'discovery' && (value.choice === 'search' || value.choice === 'press-on'))
     || (value.type === 'social' && (value.choice === 'share' || value.choice === 'command'));

@@ -4,7 +4,7 @@ import type { ExpeditionState } from "@/api/gameApi";
 
 type ExpeditionAction =
   | { type: "travel"; destinationId: string }
-  | { type: "combat"; action: "basic" | "guard" | "signature"; dodgeHits?: number }
+  | { type: "combat"; action: "basic" | "guard" | "signature" | "item"; dodgeHits?: number }
   | { type: "discovery"; choice: "search" | "press-on" }
   | { type: "social"; choice: "share" | "command" }
   | { type: "retreat" };
@@ -245,11 +245,12 @@ class OverworldScene extends Phaser.Scene {
     this.expedition.party.forEach((member, index) => {
       overlay.add(this.add.text(24, 290 + index * 18, `${member.role.toUpperCase().padEnd(7)} ${member.health}/${member.maxHealth}`, { fontFamily: "monospace", fontSize: "11px", color: member.health > 0 ? "#f4deb0" : "#a84949" }));
     });
-    (["STRIKE", "GUARD", "SIGNATURE", "RETREAT"] as const).forEach((label, index) => {
-      const button = this.add.text(95 + index * 150, 350, `[ ${label} ]`, { fontFamily: "monospace", fontSize: "15px", color: "#f4deb0", backgroundColor: "#30283a", padding: { x: 8, y: 8 } }).setInteractive({ useHandCursor: true });
-      const action = label === "RETREAT" ? { type: "retreat" } as const : { type: "combat", action: label === "STRIKE" ? "basic" : label === "GUARD" ? "guard" : "signature" } as const;
+    overlay.add(this.add.text(620, 290, `POTIONS ${this.expedition.resources.potions}`, { fontFamily: "monospace", fontSize: "11px", color: "#f4deb0" }));
+    (["STRIKE", "GUARD", "SIGNATURE", "ITEM", "RETREAT"] as const).forEach((label, index) => {
+      const button = this.add.text(38 + index * 146, 350, `[ ${label} ]`, { fontFamily: "monospace", fontSize: "15px", color: "#f4deb0", backgroundColor: "#30283a", padding: { x: 8, y: 8 } }).setInteractive({ useHandCursor: true });
+      const action = label === "RETREAT" ? { type: "retreat" } as const : { type: "combat", action: label === "STRIKE" ? "basic" : label === "GUARD" ? "guard" : label === "SIGNATURE" ? "signature" : "item" } as const;
       button.on("pointerdown", () => this.playActionIntro(action));
-      this.input.keyboard!.once(["keydown-ONE", "keydown-TWO", "keydown-THREE", "keydown-FOUR"][index], () => this.playActionIntro(action));
+      this.input.keyboard!.once(["keydown-ONE", "keydown-TWO", "keydown-THREE", "keydown-FOUR", "keydown-FIVE"][index], () => this.playActionIntro(action));
       overlay.add(button);
     });
   }
