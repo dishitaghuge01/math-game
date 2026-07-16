@@ -4,7 +4,7 @@ import { generatePlotSkeleton, narrateNode, generateChoicesForNode, narrateChoic
 import { enemyStatsFor, lootWeights } from '@math-game/mechanics-gen';
 import { SupermemoryClient } from '@math-game/memory-client';
 
-import { saveVectorSnapshot } from '../persistence/sessionRepository.js';
+import { loadVectorAtNodeIndex, saveVectorSnapshot } from '../persistence/sessionRepository.js';
 import * as sessionStore from './sessionStore.js';
 
 const HEIGHT_THRESHOLD_LOW = 0.25;
@@ -24,6 +24,19 @@ const SCALAR_VECTOR_FIELDS: Array<keyof Pick<DecisionVector, 'morality' | 'aggre
   'socialAffinity',
 ];
 
+function resolveVectorForNode(sessionId: string, session: { vector: DecisionVector; nodeIndex: number }, nodeIndex: number): DecisionVector {
+  if (nodeIndex === session.nodeIndex) {
+    return session.vector;
+  }
+
+  const historical = loadVectorAtNodeIndex(sessionId, nodeIndex);
+  if (historical) {
+    return historical;
+  }
+
+  return session.vector;
+}
+
 /**
  * Resolve choice impact server-side by deterministically regenerating the choice list
  * using the session's current vector state. This ensures the client never supplies impact values.
@@ -41,12 +54,12 @@ export function resolveChoiceImpact(sessionId: string, narrativeNodeId: string, 
   }
   nodeIndex = Number(match[1]);
 
-  // Regenerate choices deterministically using the CURRENT session vector
-  // (before this decision is applied — this is crucial for reproducibility)
-  const seed = deriveSeed(session.vector, sessionId, `narrative:node:${nodeIndex}`);
-  const beats = generatePlotSkeleton(session.vector, mulberry32(seed), nodeIndex + 1);
+  // Regenerate choices deterministically using the vector snapshot for the node being resolved.
+  const vectorForNode = resolveVectorForNode(sessionId, session, nodeIndex);
+  const seed = deriveSeed(vectorForNode, sessionId, `narrative:node:${nodeIndex}`);
+  const beats = generatePlotSkeleton(vectorForNode, mulberry32(seed), nodeIndex + 1);
   const node = beats[beats.length - 1];
-  const choicesSeed = deriveSeed(session.vector, sessionId, `narrative:node:${nodeIndex}:choices`);
+  const choicesSeed = deriveSeed(vectorForNode, sessionId, `narrative:node:${nodeIndex}:choices`);
 
   if (!node) {
     throw new Error(`Could not generate plot node at index ${nodeIndex}`);
@@ -126,7 +139,7 @@ export async function applyDecision(
     vector: nextVector,
     vectorDelta,
     allegianceDelta,
-    nextNodeId: nextNode?.id ?? `${sessionId}:${nextNodeIndex}`,
+    nextNodeId: `${sessionId}:${nextNodeIndex}`,
   };
 }
 
@@ -173,19 +186,20 @@ export async function generateNarrativeNode(
     nodeIndex = Number(match[1]);
   }
 
-  const seed = deriveSeed(session.vector, sessionId, `narrative:node:${nodeIndex}`);
-  const beats = generatePlotSkeleton(session.vector, mulberry32(seed), nodeIndex + 1);
+  const vectorForNode = resolveVectorForNode(sessionId, session, nodeIndex);
+  const seed = deriveSeed(vectorForNode, sessionId, `narrative:node:${nodeIndex}`);
+  const beats = generatePlotSkeleton(vectorForNode, mulberry32(seed), nodeIndex + 1);
   const node = beats[beats.length - 1];
 
   const memory = await supermemoryClient.search(sessionId, node?.symbol ?? 'story', 5).catch(() => []);
   const prose = await narrateNode(
     node ?? { id: `${sessionId}:${nodeIndex}`, symbol: 'STORY', tokens: [] },
     memory,
-    session.vector,
+    vectorForNode,
   );
 
   // Generate choices deterministically from (node, vector, rng)
-  const choicesSeed = deriveSeed(session.vector, sessionId, `narrative:node:${nodeIndex}:choices`);
+  const choicesSeed = deriveSeed(vectorForNode, sessionId, `narrative:node:${nodeIndex}:choices`);
   const choiceOptions = generateChoicesForNode(
     node ?? { id: `${sessionId}:${nodeIndex}`, symbol: 'STORY', tokens: [] },
     mulberry32(choicesSeed),
@@ -198,7 +212,7 @@ export async function generateNarrativeNode(
       narrateChoice(
         node ?? { id: `${sessionId}:${nodeIndex}`, symbol: 'STORY', tokens: [] },
         option.archetype,
-        session.vector,
+        vectorForNode,
       ),
     ),
   );

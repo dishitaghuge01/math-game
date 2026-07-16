@@ -23,6 +23,22 @@ export function saveVectorSnapshot(sessionId: string, nodeIndex: number, vector:
   `).run(sessionId, nodeIndex, JSON.stringify(vector), createdAt);
 }
 
+export function loadVectorAtNodeIndex(sessionId: string, nodeIndex: number): DecisionVector | null {
+  const row = db.prepare(`
+    SELECT vector_json
+    FROM vector_history
+    WHERE session_id = ? AND node_index = ?
+    ORDER BY id DESC
+    LIMIT 1
+  `).get(sessionId, nodeIndex) as { vector_json: string } | undefined;
+
+  if (!row) {
+    return null;
+  }
+
+  return JSON.parse(row.vector_json) as DecisionVector;
+}
+
 export function loadLatestVector(sessionId: string): DecisionVector | null {
   const row = db.prepare(`
     SELECT vector_json
@@ -49,15 +65,15 @@ export function loadNodeIndex(sessionId: string): number {
   return row?.max_node_index ?? 0;
 }
 
-export function getInitialVectorForSession(sessionId: string, userId: string): { vector: DecisionVector; nodeIndex: number; userId: string } {
+export function getInitialVectorForSession(sessionId: string, userId: string): { vector: DecisionVector; nodeIndex: number; userId: string; isNewSession: boolean } {
   saveSession(sessionId, userId);
 
   const persistedVector = loadLatestVector(sessionId);
   const persistedNodeIndex = loadNodeIndex(sessionId);
 
   if (persistedVector) {
-    return { vector: persistedVector, nodeIndex: persistedNodeIndex, userId };
+    return { vector: persistedVector, nodeIndex: persistedNodeIndex, userId, isNewSession: false };
   }
 
-  return { vector: createInitialVector(), nodeIndex: 0, userId };
+  return { vector: createInitialVector(), nodeIndex: 0, userId, isNewSession: true };
 }

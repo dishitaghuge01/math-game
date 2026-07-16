@@ -80,6 +80,19 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
+      <header className="border-b border-border bg-background/90 px-4 py-3">
+        <nav className="flex gap-4 text-sm">
+          <Link to="/decision" className="text-foreground hover:underline">
+            DECISION
+          </Link>
+          <Link to="/world" className="text-foreground hover:underline">
+            WORLD
+          </Link>
+          <Link to="/character" className="text-foreground hover:underline">
+            CHARACTER
+          </Link>
+        </nav>
+      </header>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
     </QueryClientProvider>

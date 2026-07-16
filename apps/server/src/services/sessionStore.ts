@@ -1,5 +1,5 @@
 // In-memory cache over SQLite-backed persistence so restarts can resume sessions.
-import { createInitialVector, type DecisionVector } from '@math-game/core-math';
+import { type DecisionVector } from '@math-game/core-math';
 import { getInitialVectorForSession, saveSession, saveVectorSnapshot } from '../persistence/sessionRepository.js';
 
 export interface SessionState {
@@ -23,6 +23,11 @@ export function getOrCreateSession(sessionId: string, userId: string): SessionSt
     userId: persisted.userId,
   };
   sessions.set(sessionId, state);
+
+  if (persisted.isNewSession) {
+    saveVectorSnapshot(sessionId, 0, state.vector);
+  }
+
   return state;
 }
 
@@ -34,7 +39,6 @@ export function updateSession(sessionId: string, vector: DecisionVector): void {
 
   session.vector = vector;
   saveSession(sessionId, session.userId);
-  saveVectorSnapshot(sessionId, session.nodeIndex, vector);
 }
 
 export function incrementNodeIndex(sessionId: string): number {
