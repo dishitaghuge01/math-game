@@ -11,6 +11,7 @@ import type { ExpeditionAction, ExpeditionGameProps } from "./types";
 
 export class OverworldScene extends Phaser.Scene {
   private expedition: ExpeditionState;
+  private previousExpedition?: ExpeditionState;
   private readonly submit: ExpeditionGameProps["onAction"];
   private player!: Phaser.Physics.Arcade.Sprite;
   private followers: Phaser.GameObjects.Sprite[] = [];
@@ -31,6 +32,7 @@ export class OverworldScene extends Phaser.Scene {
   }
 
   applyExpeditionState(expedition: ExpeditionState) {
+    this.previousExpedition = this.expedition;
     this.expedition = expedition;
     if (!this.sys.isActive()) return;
     this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => this.scene.restart());
@@ -55,6 +57,7 @@ export class OverworldScene extends Phaser.Scene {
     if (this.expedition.combat?.status === "active") this.openBattle();
     else if (this.expedition.combat?.status === "victory" || this.expedition.combat?.status === "defeat") this.openCombatOutcome();
     else this.battleOpen = openEncounterDialogue(this, this.expedition, this.submit);
+    this.showProgressFeedback();
   }
 
   update() {
@@ -81,6 +84,20 @@ export class OverworldScene extends Phaser.Scene {
     const target = this.nearbyReachableLandmark();
     this.prompt.setText(target ? `[E] Travel to ${this.locationName(target.id)}` : "");
     if (target && Phaser.Input.Keyboard.JustDown(this.interact)) this.submit({ type: "travel", destinationId: target.id });
+  }
+
+  private showProgressFeedback() {
+    if (!this.previousExpedition) return;
+    const gold = this.expedition.resources.gold - this.previousExpedition.resources.gold;
+    const experience = this.expedition.resources.experience - this.previousExpedition.resources.experience;
+    const traits = Object.entries(this.expedition.traits)
+      .filter(([key, trait]) => trait.tier !== this.previousExpedition!.traits[key as keyof ExpeditionState["traits"]].tier)
+      .map(([key]) => key.toUpperCase());
+    const messages = [gold > 0 ? `+${gold} GOLD` : "", experience > 0 ? `+${experience} XP` : "", traits.length ? `${traits.join(" / ")} SHIFTED` : ""].filter(Boolean);
+    this.previousExpedition = undefined;
+    if (!messages.length) return;
+    const toast = this.add.text(VIEW_WIDTH / 2, 82, messages.join("  "), { fontFamily: "monospace", fontSize: "13px", color: "#f4deb0", backgroundColor: "#30283a", padding: { x: 10, y: 7 } }).setOrigin(0.5).setScrollFactor(0).setDepth(50);
+    this.tweens.add({ targets: toast, y: 60, alpha: 0, delay: 900, duration: 700, onComplete: () => toast.destroy() });
   }
 
   private drawMap() {
