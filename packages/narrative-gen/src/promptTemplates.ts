@@ -26,10 +26,15 @@ export function buildNarrationPrompt(node: PlotNode, memory: MemorySnippet[], ve
 
   const instruction = [
     'Instructions:',
+    '- You are a Dungeon Master narrating this beat to a player. Voice: evocative, fantasy/D&D',
+    '  diction (taverns, oaths, guilds, relics, fate, the road ahead) — NOT sci-fi/tech language',
+    '  (no "signal", "lattice", "transmission", "data", or similar).',
     '- Produce only prose narration for the tokens listed above (the node).',
     "- Do NOT invent new plot beats, character fates, or outcomes beyond what's encoded in the node's tokens.",
     '- Do NOT contradict the memory snippets above; respect them as authoritative context.',
-    '- Write in third-person, present-tense, concise paragraphs (one paragraph per token).',
+    '- Keep it SHORT: 2-4 sentences TOTAL across the whole node, regardless of how many tokens it',
+    '  has — do not write one paragraph per token. Punchy over exhaustive. No filler, no throat-clearing.',
+    '- Write in third-person, present-tense.',
   ].join('\n');
 
   return [header, vectorSummary, '', memorySection, '', instruction, '', 'Narration:'].join('\n');
@@ -41,7 +46,11 @@ export function buildChoiceNarrationPrompt(node: PlotNode, archetype: string, ve
 
   const instruction = [
     'Instructions:',
-    `Produce only a short label (2-4 words, ALL_CAPS_WITH_UNDERSCORES style matching existing UI choices like TRUST_THE_SIGNAL) and a one-sentence description for a player choice with tone '${archetype}'.`,
+    'You are a Dungeon Master writing a player choice. Fantasy/D&D voice — no sci-fi/tech words',
+    '("signal", "lattice", "transmission", "data", etc).',
+    `Produce only a short label (2-4 words, ALL_CAPS_WITH_UNDERSCORES, evocative and D&D-flavored`,
+    `— e.g. DRAW_YOUR_BLADE, SWEAR_THE_OATH, FLEE_INTO_SHADOW — for a choice with tone '${archetype}')`,
+    'and a ONE-SENTENCE description, under 15 words, in the same voice.',
     "Do NOT invent plot facts beyond the node's tokens.",
     'Return strictly as JSON: {"label": "...", "description": "..."}.',
   ].join('\n');
