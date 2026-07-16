@@ -1,9 +1,13 @@
 export type AudioCue = "confirm" | "dialogue" | "hit" | "heal" | "victory";
 
 let context: AudioContext | null = null;
-let muted = false;
+let muted = typeof window !== "undefined" && localStorage.getItem("wayfarer:muted") === "true";
 
-export function toggleMuted() { muted = !muted; return muted; }
+export function toggleMuted() {
+  muted = !muted;
+  if (typeof window !== "undefined") localStorage.setItem("wayfarer:muted", String(muted));
+  return muted;
+}
 export function isMuted() { return muted; }
 
 /** Small original synthesized cues; works without external audio assets. */
