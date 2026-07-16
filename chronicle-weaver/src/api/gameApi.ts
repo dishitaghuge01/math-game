@@ -190,7 +190,7 @@ export async function importExpeditionCode(code: string): Promise<ExpeditionStat
 export async function postExpeditionAction(
   action:
     | { type: "travel"; destinationId: string }
-    | { type: "combat"; action: "basic" | "guard" | "signature" }
+    | { type: "combat"; action: "basic" | "guard" | "signature"; dodgeHits?: number }
     | { type: "discovery"; choice: "search" | "press-on" }
     | { type: "social"; choice: "share" | "command" }
     | { type: "retreat" },

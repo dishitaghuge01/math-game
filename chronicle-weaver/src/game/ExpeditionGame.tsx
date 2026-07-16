@@ -4,7 +4,7 @@ import type { ExpeditionState } from "@/api/gameApi";
 
 type ExpeditionAction =
   | { type: "travel"; destinationId: string }
-  | { type: "combat"; action: "basic" | "guard" | "signature" }
+  | { type: "combat"; action: "basic" | "guard" | "signature"; dodgeHits?: number }
   | { type: "discovery"; choice: "search" | "press-on" }
   | { type: "social"; choice: "share" | "command" }
   | { type: "retreat" };
@@ -56,6 +56,7 @@ class OverworldScene extends Phaser.Scene {
   private dodgeAction: ExpeditionAction | null = null;
   private soul?: Phaser.GameObjects.Rectangle;
   private bullets?: Phaser.GameObjects.Group;
+  private dodgeHits = 0;
 
   constructor(expedition: ExpeditionState, submit: Props["onAction"]) {
     super("overworld");
@@ -194,6 +195,7 @@ class OverworldScene extends Phaser.Scene {
 
   private beginDodgePhase(action: ExpeditionAction) {
     this.dodgeAction = action;
+    this.dodgeHits = 0;
     this.children.getAll().filter((child) => child.depth === 30).forEach((child) => child.destroy());
     const arena = this.add.rectangle(VIEW_WIDTH / 2, VIEW_HEIGHT / 2, 350, 180, 0x11101a).setStrokeStyle(4, 0xf4deb0).setDepth(31).setScrollFactor(0);
     this.add.text(VIEW_WIDTH / 2, 120, "DODGE THE FOG", { fontFamily: "monospace", fontSize: "16px", color: "#f4deb0" }).setOrigin(0.5).setDepth(32).setScrollFactor(0);
@@ -210,7 +212,10 @@ class OverworldScene extends Phaser.Scene {
       this.bullets?.clear(true, true);
       arena.destroy();
       this.soul?.destroy();
-      this.submit(this.dodgeAction!);
+      const resolvedAction = this.dodgeAction?.type === "combat"
+        ? { ...this.dodgeAction, dodgeHits: this.dodgeHits }
+        : this.dodgeAction!;
+      this.submit(resolvedAction);
       this.dodgeAction = null;
     });
   }
@@ -227,6 +232,7 @@ class OverworldScene extends Phaser.Scene {
       projectile.y += projectile.getData("speed") * (1 / 60);
       if (projectile.y > 292) projectile.destroy();
       if (Phaser.Geom.Intersects.RectangleToRectangle(this.soul!.getBounds(), projectile.getBounds())) {
+        this.dodgeHits += 1;
         this.cameras.main.shake(80, 0.008);
         projectile.destroy();
       }

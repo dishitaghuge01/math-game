@@ -13,7 +13,7 @@ export interface RegionLocation {
 
 export type ExpeditionAction =
   | { type: 'travel'; destinationId: string }
-  | { type: 'combat'; action: 'basic' | 'guard' | 'signature' }
+  | { type: 'combat'; action: 'basic' | 'guard' | 'signature'; dodgeHits?: number }
   | { type: 'retreat' }
   | { type: 'discovery'; choice: 'search' | 'press-on' }
   | { type: 'social'; choice: 'share' | 'command' };
@@ -153,7 +153,7 @@ export function retreatToCamp(expeditionId: string): ExpeditionState {
   return state;
 }
 
-export function resolveCombatAction(expeditionId: string, action: 'basic' | 'guard' | 'signature'): ExpeditionState {
+export function resolveCombatAction(expeditionId: string, action: 'basic' | 'guard' | 'signature', dodgeHits = 0): ExpeditionState {
   const state = loadExpedition(expeditionId);
   if (!state) throw Object.assign(new Error('Expedition not found'), { status: 404 });
   if (!state.combat || state.combat.status !== 'active') throw Object.assign(new Error('No active Combat Encounter'), { status: 400 });
@@ -180,9 +180,10 @@ export function resolveCombatAction(expeditionId: string, action: 'basic' | 'gua
     }
   } else {
     const target = state.party.find((member) => member.role === actingRole)!;
-    const incomingDamage = action === 'guard' ? 1 : 3;
+    const baseDamage = action === 'guard' ? 1 : 3;
+    const incomingDamage = baseDamage + Math.max(0, Math.floor(dodgeHits));
     target.health = Math.max(0, target.health - incomingDamage);
-    state.combat.log.push(`${state.combat.enemy.name} strikes ${target.name} for ${incomingDamage}.`);
+    state.combat.log.push(`${state.combat.enemy.name} strikes ${target.name} for ${incomingDamage} damage after ${dodgeHits} dodge hits.`);
     if (state.party.every((member) => member.health === 0)) {
       state.combat.status = 'defeat';
       state.combat.log.push('The Party falls and returns to Camp.');
@@ -194,7 +195,7 @@ export function resolveCombatAction(expeditionId: string, action: 'basic' | 'gua
     const roles: PartyRole[] = ['fighter', 'mage', 'support'];
     state.combat.activeMemberRole = roles[(roles.indexOf(actingRole) + 1) % roles.length];
   }
-  recordAction(state, { type: 'combat', action });
+  recordAction(state, { type: 'combat', action, dodgeHits });
   saveExpedition(state);
   return state;
 }
@@ -202,7 +203,7 @@ export function resolveCombatAction(expeditionId: string, action: 'basic' | 'gua
 export function applyExpeditionAction(expeditionId: string, action: ExpeditionAction): ExpeditionState {
   switch (action.type) {
     case 'travel': return travelToLocation(expeditionId, action.destinationId);
-    case 'combat': return resolveCombatAction(expeditionId, action.action);
+    case 'combat': return resolveCombatAction(expeditionId, action.action, action.dodgeHits);
     case 'retreat': return retreatToCamp(expeditionId);
     case 'discovery': return resolveDiscovery(expeditionId, action.choice);
     case 'social': return resolveSocial(expeditionId, action.choice);
@@ -240,7 +241,7 @@ export function isExpeditionAction(action: unknown): action is ExpeditionAction 
   if (!action || typeof action !== 'object' || !('type' in action)) return false;
   const value = action as Record<string, unknown>;
   return (value.type === 'travel' && typeof value.destinationId === 'string')
-    || (value.type === 'combat' && (value.action === 'basic' || value.action === 'guard' || value.action === 'signature'))
+    || (value.type === 'combat' && (value.action === 'basic' || value.action === 'guard' || value.action === 'signature') && (value.dodgeHits === undefined || (typeof value.dodgeHits === 'number' && Number.isInteger(value.dodgeHits) && value.dodgeHits >= 0)))
     || value.type === 'retreat'
     || (value.type === 'discovery' && (value.choice === 'search' || value.choice === 'press-on'))
     || (value.type === 'social' && (value.choice === 'share' || value.choice === 'command'));
