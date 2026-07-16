@@ -57,7 +57,7 @@ export class OverworldScene extends Phaser.Scene {
     this.dodge = new DodgePhase(this, this.keys, this.submit);
     this.cameras.main.setBounds(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
     this.cameras.main.startFollow(this.player, true, 0.12, 0.12);
-    this.cameras.main.setZoom(1.2);
+    this.cameras.main.setZoom(1);
     this.add.text(12, 10, "FOGBOUND MOOR", { fontFamily: "monospace", fontSize: "16px", color: "#f4deb0" }).setScrollFactor(0).setDepth(20);
     this.add.text(12, 32, "ARROWS: WALK   E: INTERACT   M: SOUND   R: MOTION", { fontFamily: "monospace", fontSize: "10px", color: "#b6a37c" }).setScrollFactor(0).setDepth(20);
     this.soundStatus = this.add.text(700, 10, isMuted() ? "MUTED" : "SOUND", { fontFamily: "monospace", fontSize: "10px", color: "#b6a37c" }).setOrigin(1, 0).setScrollFactor(0).setDepth(20);
