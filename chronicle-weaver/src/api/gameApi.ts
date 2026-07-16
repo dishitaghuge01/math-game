@@ -58,6 +58,17 @@ export interface ExpeditionState {
     "mercy" | "resolve" | "curiosity" | "defiance" | "kinship",
     { tier: string; recentShift: string }
   >;
+  region: {
+    name: string;
+    currentLocationId: string;
+    locations: Array<{
+      id: string;
+      name: string;
+      type: "camp" | "combat" | "discovery" | "social" | "landmark";
+      connectedTo: string[];
+      revealed: boolean;
+    }>;
+  };
 }
 
 export interface RpgCombat {
@@ -145,6 +156,17 @@ export async function startExpedition(): Promise<ExpeditionState> {
   return request<ExpeditionState>("/expeditions", {
     method: "POST",
     body: JSON.stringify({ expeditionId: sessionId }),
+  });
+}
+
+export async function postExpeditionAction(action: {
+  type: "travel";
+  destinationId: string;
+}): Promise<ExpeditionState> {
+  const { sessionId } = getOrCreateClientIds();
+  return request<ExpeditionState>(`/expeditions/${encodeURIComponent(sessionId)}/actions`, {
+    method: "POST",
+    body: JSON.stringify(action),
   });
 }
 

@@ -41,4 +41,25 @@ describe('Expedition API', () => {
     expect(resumed.status).toBe(200);
     expect(await resumed.json()).toEqual(expedition);
   });
+
+  it('travels between connected generated Region locations and persists the revealed destination', async () => {
+    const expeditionId = `region-test-${Date.now()}`;
+    const started = await fetch(`${baseUrl}/expeditions`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ expeditionId, worldSeed: 271828 }),
+    });
+    const expedition = await started.json() as { region: { currentLocationId: string; locations: Array<{ id: string; connectedTo: string[]; revealed: boolean }> } };
+    const origin = expedition.region.locations.find((location) => location.id === expedition.region.currentLocationId)!;
+    const destinationId = origin.connectedTo[0];
+
+    const travelled = await fetch(`${baseUrl}/expeditions/${expeditionId}/actions`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'travel', destinationId }),
+    });
+    expect(travelled.status).toBe(200);
+    const next = await travelled.json() as typeof expedition;
+    expect(next.region.currentLocationId).toBe(destinationId);
+    expect(next.region.locations.find((location) => location.id === destinationId)?.revealed).toBe(true);
+
+    const resumed = await fetch(`${baseUrl}/expeditions/${expeditionId}`);
+    expect(await resumed.json()).toEqual(next);
+  });
 });

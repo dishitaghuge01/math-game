@@ -19,10 +19,10 @@ These tracer-bullet tickets build the complete one-Region prologue specified in 
 
 **Blocked by:** Start a seeded Expedition.
 
-- [ ] The player sees a connected Region Map with a Camp, distinct location types, and only valid reachable routes.
-- [ ] Selecting a valid destination advances the Expedition Party and updates the displayed Region State.
-- [ ] The generated terrain, landmarks, palette, and map composition are reproducible from the Expedition’s Generation Rules.
-- [ ] The Region Map uses cohesive generated SVG Asset Grammar rather than ASCII or generic placeholder art.
+- [x] The player sees a connected Region Map with a Camp, distinct location types, and only valid reachable routes.
+- [x] Selecting a valid destination advances the Expedition Party and updates the displayed Region State.
+- [x] The generated terrain, landmarks, palette, and map composition are reproducible from the Expedition’s Generation Rules.
+- [x] The Region Map uses cohesive generated SVG Asset Grammar rather than ASCII or generic placeholder art.
 
 ## Resolve three-member Combat Encounters
 
