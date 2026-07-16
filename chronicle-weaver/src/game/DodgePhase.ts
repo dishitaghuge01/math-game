@@ -31,6 +31,7 @@ export class DodgePhase {
     this.soul = this.scene.add.rectangle(WIDTH / 2, HEIGHT / 2, 12, 12, 0xff4f6d).setDepth(32).setScrollFactor(0);
     this.bullets = this.scene.add.group();
     const pattern = [...patternKey].reduce((total, character) => (total * 31 + character.charCodeAt(0)) >>> 0, 0) % 3;
+    if (!prefersReducedMotion()) this.scene.cameras.main.flash(90, 130, 55, 65);
     const spawn = this.scene.time.addEvent({ delay: pattern === 2 ? 180 : 260, repeat: pattern === 1 ? 16 : 11, callback: () => this.spawnProjectile(pattern) });
     this.scene.time.delayedCall(3300, () => {
       spawn.remove(false);
@@ -51,7 +52,7 @@ export class DodgePhase {
     if (this.keys.up.isDown) this.soul.y = Phaser.Math.Clamp(this.soul.y - speed, 148, 284);
     if (this.keys.down.isDown) this.soul.y = Phaser.Math.Clamp(this.soul.y + speed, 148, 284);
     this.bullets.getChildren().forEach((bullet) => {
-      const projectile = bullet as Phaser.GameObjects.Rectangle;
+      const projectile = bullet as Phaser.GameObjects.Sprite;
       projectile.x += (projectile.getData("vx") ?? 0) / 60;
       projectile.y += (projectile.getData("vy") ?? projectile.getData("speed")) / 60;
       if (projectile.y > 302 || projectile.x < 208 || projectile.x > 560) projectile.destroy();
@@ -71,7 +72,8 @@ export class DodgePhase {
 
   private spawnProjectile(pattern: number) {
     if (!this.bullets) return;
-    const bullet = this.scene.add.rectangle(0, 0, 9, 9, 0xe8e4da).setDepth(32).setScrollFactor(0);
+    const texture = pattern === 0 ? "projectile-fog" : pattern === 1 ? "projectile-ash" : "projectile-wisp";
+    const bullet = this.scene.add.sprite(0, 0, texture).setDepth(32).setScrollFactor(0);
     if (pattern === 0) bullet.setPosition(Phaser.Math.Between(250, 518), 162).setData("vy", Phaser.Math.Between(85, 140));
     else if (pattern === 1) {
       const fromLeft = this.bullets.getLength() % 2 === 0;

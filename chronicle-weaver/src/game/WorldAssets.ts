@@ -36,7 +36,13 @@ export function ensureWorldTextures(scene: Phaser.Scene) {
   paint.fillStyle(0x4e3527).fillRect(13, 18, 6, 12).fillStyle(0x27392e).fillCircle(16, 12, 11).fillStyle(0x355548).fillCircle(12, 9, 7);
   paint.generateTexture("prop-tree", 32, 32).clear();
   paint.fillStyle(0x766e65).fillCircle(16, 18, 10).fillStyle(0xa89e8d).fillCircle(12, 14, 4).fillCircle(20, 17, 3);
-  paint.generateTexture("prop-stone", 32, 32).destroy();
+  paint.generateTexture("prop-stone", 32, 32).clear();
+  paint.fillStyle(0xdce9ef).fillRect(3, 0, 4, 4).fillRect(0, 4, 10, 4).fillRect(3, 8, 4, 4).fillStyle(0x78b7d2).fillRect(3, 4, 4, 4);
+  paint.generateTexture("projectile-fog", 10, 12).clear();
+  paint.fillStyle(0xc98c5f).fillRect(3, 0, 4, 10).fillStyle(0xffcf70).fillRect(0, 3, 10, 4).fillStyle(0x7a3d3c).fillRect(3, 3, 4, 4);
+  paint.generateTexture("projectile-ash", 10, 10).clear();
+  paint.fillStyle(0xc397e8).fillRect(2, 0, 6, 10).fillRect(0, 2, 10, 6).fillStyle(0xf4deb0).fillRect(3, 3, 4, 4);
+  paint.generateTexture("projectile-wisp", 10, 10).destroy();
 }
 
 export function seededTerrain(seed: number, x: number, y: number): number {
