@@ -29,7 +29,7 @@ export interface ExpeditionState {
   party: Array<{ role: PartyRole; name: string; motive: string; portrait: string; health: number; maxHealth: number; shield: number; abilities: string[]; signatureAbility: SignatureAbility; bond: number }>;
   traits: Record<'mercy' | 'resolve' | 'curiosity' | 'defiance' | 'kinship', { tier: string; recentShift: string }>;
   region: { name: string; currentLocationId: string; campLocationId: string; rivalAdvanced: boolean; locations: RegionLocation[] };
-  combat: { status: 'active' | 'victory' | 'defeat'; enemy: { name: string; health: number; maxHealth: number }; activeMemberRole: PartyRole; log: string[] } | null;
+  combat: { status: 'active' | 'victory' | 'defeat'; enemy: { name: string; health: number; maxHealth: number; weakened: number }; activeMemberRole: PartyRole; log: string[] } | null;
   resources: { gold: number; experience: number; potions: number };
   majorDecisionResolved: boolean;
   ending: { title: string; summary: string } | null;
@@ -88,7 +88,7 @@ export function travelToLocation(expeditionId: string, destinationId: string): E
   destination.revealed = true;
   if (destination.type === 'camp') state.region.campLocationId = destinationId;
   if (destination.type === 'combat') {
-    state.combat = { status: 'active', enemy: { name: 'Fogbound Revenant', health: 18, maxHealth: 18 }, activeMemberRole: 'fighter', log: ['A Fogbound Revenant bars the road.'] };
+    state.combat = { status: 'active', enemy: { name: 'Fogbound Revenant', health: 18, maxHealth: 18, weakened: 0 }, activeMemberRole: 'fighter', log: ['A Fogbound Revenant bars the road.'] };
   }
   for (const neighborId of destination.connectedTo) {
     const neighbor = state.region.locations.find((location) => location.id === neighborId);
@@ -169,9 +169,11 @@ export function resolveCombatAction(expeditionId: string, action: 'basic' | 'gua
     state.combat.log.push(`${actor.name} drinks a potion and recovers 7 health.`);
   }
   if (action === 'signature' && actor.signatureAbility.effects.includes('healing')) {
-    const wounded = state.party.find((member) => member.health < member.maxHealth);
-    if (wounded) wounded.health = Math.min(wounded.maxHealth, wounded.health + 5);
+    const wounded = state.party.find((member) => member.health < member.maxHealth) ?? actor;
+    wounded.health = Math.min(wounded.maxHealth, wounded.health + 5);
   }
+  if (action === 'signature' && actor.signatureAbility.effects.includes('buff')) actor.shield += 1;
+  if (action === 'signature' && actor.signatureAbility.effects.includes('debuff')) state.combat.enemy.weakened = 1;
   state.combat.enemy.health = Math.max(0, state.combat.enemy.health - damage);
   state.combat.log.push(`${actingRole} uses ${action} for ${damage} damage.`);
   if (state.combat.enemy.health === 0) {
@@ -188,7 +190,8 @@ export function resolveCombatAction(expeditionId: string, action: 'basic' | 'gua
   } else {
     const target = state.party.find((member) => member.role === actingRole)!;
     const baseDamage = action === 'guard' ? 1 : action === 'item' ? 2 : 3;
-    const incomingDamage = baseDamage + Math.max(0, Math.floor(dodgeHits));
+    const incomingDamage = Math.max(0, baseDamage + Math.max(0, Math.floor(dodgeHits)) - state.combat.enemy.weakened);
+    state.combat.enemy.weakened = 0;
     const absorbed = Math.min(target.shield, incomingDamage);
     target.shield -= absorbed;
     const damageTaken = incomingDamage - absorbed;

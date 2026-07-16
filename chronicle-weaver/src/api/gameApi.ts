@@ -68,7 +68,7 @@ export interface ExpeditionState {
   ending: { title: string; summary: string } | null;
   combat: {
     status: "active" | "victory" | "defeat";
-    enemy: { name: string; health: number; maxHealth: number };
+    enemy: { name: string; health: number; maxHealth: number; weakened: number };
     activeMemberRole: "fighter" | "mage" | "support";
     log: string[];
   } | null;
