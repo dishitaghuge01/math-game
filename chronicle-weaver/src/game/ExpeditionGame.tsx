@@ -340,10 +340,24 @@ class OverworldScene extends Phaser.Scene {
     const close = () => {
       overlay.destroy(true);
       if (victory && this.expedition.ending) this.openEndingScene();
+      if (!victory) this.openCampScene();
     };
     continueButton.on("pointerdown", close);
     this.input.keyboard!.once("keydown-ENTER", close);
     overlay.add(continueButton);
+  }
+
+  private openCampScene() {
+    const overlay = this.add.container(0, 0).setDepth(35).setScrollFactor(0);
+    overlay.add(this.add.rectangle(VIEW_WIDTH / 2, VIEW_HEIGHT / 2, VIEW_WIDTH, VIEW_HEIGHT, 0x2b2030, 0.98));
+    overlay.add(this.add.circle(VIEW_WIDTH / 2, 150, 46, 0xdd9c49, 0.35));
+    overlay.add(this.add.circle(VIEW_WIDTH / 2, 160, 25, 0xf4deb0, 0.9));
+    overlay.add(this.add.text(VIEW_WIDTH / 2, 225, "HEARTH OF REEDS", { fontFamily: "monospace", fontSize: "25px", color: "#f4deb0" }).setOrigin(0.5));
+    overlay.add(this.add.text(VIEW_WIDTH / 2, 262, `The Party regroups. Potions remaining: ${this.expedition.resources.potions}.\nA rival has advanced through the fog.`, { fontFamily: "monospace", fontSize: "14px", color: "#ffffff", align: "center", lineSpacing: 8 }).setOrigin(0.5));
+    const leave = this.add.text(VIEW_WIDTH / 2, 350, "[ RETURN TO THE ROAD ]", { fontFamily: "monospace", fontSize: "14px", color: "#f4deb0", backgroundColor: "#30283a", padding: { x: 10, y: 8 } }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+    leave.on("pointerdown", () => overlay.destroy(true));
+    this.input.keyboard!.once("keydown-ENTER", () => overlay.destroy(true));
+    overlay.add(leave);
   }
 
   private openEndingScene() {
