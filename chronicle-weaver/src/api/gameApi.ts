@@ -45,6 +45,21 @@ export interface PaletteResponse {
   palette: string[];
 }
 
+export interface ExpeditionState {
+  expeditionId: string;
+  worldSeed: number;
+  party: Array<{
+    role: "fighter" | "mage" | "support";
+    name: string;
+    motive: string;
+    portrait: string;
+  }>;
+  traits: Record<
+    "mercy" | "resolve" | "curiosity" | "defiance" | "kinship",
+    { tier: string; recentShift: string }
+  >;
+}
+
 export interface RpgCombat {
   player: { name: string; health: number; maxHealth: number; attack: number };
   enemy: { name: string; health: number; maxHealth: number; attack: number };
@@ -123,6 +138,14 @@ export async function fetchMechanics(baseDifficulty = 1): Promise<MechanicsRespo
   const { sessionId } = getOrCreateClientIds();
   const q = new URLSearchParams({ sessionId, baseDifficulty: String(baseDifficulty) });
   return request<MechanicsResponse>(`/generate/mechanics?${q.toString()}`);
+}
+
+export async function startExpedition(): Promise<ExpeditionState> {
+  const { sessionId } = getOrCreateClientIds();
+  return request<ExpeditionState>("/expeditions", {
+    method: "POST",
+    body: JSON.stringify({ expeditionId: sessionId }),
+  });
 }
 
 export async function fetchRpgGame(): Promise<RpgGameState> {

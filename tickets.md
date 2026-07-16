@@ -8,10 +8,10 @@ These tracer-bullet tickets build the complete one-Region prologue specified in 
 
 **Blocked by:** None — can start immediately.
 
-- [ ] Starting an Expedition creates one authoritative, persisted Expedition State with a reproducible World Seed and Party Origin.
-- [ ] The player can begin a new Expedition and resume the same Expedition after refresh or server restart.
-- [ ] The UI presents the three generated Party members and player-facing Mercy, Resolve, Curiosity, Defiance, and Kinship traits.
-- [ ] A fixed World Seed produces the same Party Origin and initial visible Expedition State.
+- [x] Starting an Expedition creates one authoritative, persisted Expedition State with a reproducible World Seed and Party Origin.
+- [x] The player can begin a new Expedition and resume the same Expedition after refresh or server restart.
+- [x] The UI presents the three generated Party members and player-facing Mercy, Resolve, Curiosity, Defiance, and Kinship traits.
+- [x] A fixed World Seed produces the same Party Origin and initial visible Expedition State.
 
 ## Travel an illustrated Region Map
 
