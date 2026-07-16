@@ -152,7 +152,10 @@ export class OverworldScene extends Phaser.Scene {
     this.actionSelecting = true;
     const actor = this.expedition.combat?.activeMemberRole ?? "party";
     const label = action.type === "combat" ? action.action.toUpperCase() : "RETREAT";
-    const announcement = this.add.text(VIEW_WIDTH / 2, 300, `${actor.toUpperCase()} — ${label}!`, { fontFamily: "monospace", fontSize: "18px", color: "#ffffff", backgroundColor: "#7b3140", padding: { x: 12, y: 8 } }).setOrigin(0.5).setDepth(40).setScrollFactor(0);
+    const roleColor = actor === "fighter" ? 0xc95b4f : actor === "mage" ? 0x7561c7 : actor === "support" ? 0x58a98a : 0x7b3140;
+    const announcement = this.add.text(VIEW_WIDTH / 2, 300, `${actor.toUpperCase()} — ${label}!`, { fontFamily: "monospace", fontSize: "18px", color: "#ffffff", backgroundColor: `#${roleColor.toString(16).padStart(6, "0")}`, padding: { x: 12, y: 8 } }).setOrigin(0.5).setDepth(40).setScrollFactor(0);
+    const burst = Array.from({ length: 8 }, (_, index) => this.add.circle(VIEW_WIDTH / 2, 210, 4, roleColor).setDepth(39).setScrollFactor(0));
+    burst.forEach((spark, index) => this.tweens.add({ targets: spark, x: spark.x + Math.cos(index * Math.PI / 4) * 70, y: spark.y + Math.sin(index * Math.PI / 4) * 45, alpha: 0, duration: 360, onComplete: () => spark.destroy() }));
     this.tweens.add({ targets: announcement, scaleX: 1.12, scaleY: 1.12, duration: 160, yoyo: true });
     this.time.delayedCall(430, () => {
       announcement.destroy();
