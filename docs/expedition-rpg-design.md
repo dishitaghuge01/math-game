@@ -17,10 +17,11 @@
 - A complete Expedition contains three generated regions, each with approximately 5–7 reachable locations and a major party or world decision. The third region ends in a generated final Encounter and ending shaped by Expedition Traits, party relationships, and resolved choices.
 - Visuals use a coherent 2D illustrated SVG cut-paper-and-ink style. Generation Rules compose terrain, landmarks, party portraits and silhouettes, enemy forms, item icons, and region UI motifs from an authored shape and texture library plus the World Seed.
 - Expeditions auto-save locally and server-side. An Expedition Code serializes the initial World Seed with compact choice and action history so it can be replayed exactly or imported to branch into a different outcome. Accounts are out of scope for the first version.
+- The five player-facing Expedition Traits are Mercy, Resolve, Curiosity, Defiance, and Kinship. They are the interpretations of the Choice Vector that shape procedural content.
 
 ## Open decisions
 
-- Expedition Trait dimensions
+- Story-generation constraints
 - Choice Vector dimensions and how players perceive them
 - Campaign structure and ending conditions
 - Procedural asset style and production pipeline

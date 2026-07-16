@@ -59,3 +59,7 @@ _Avoid_: asset pack, AI image generator
 **Expedition Code**:
 A portable record of an Expedition’s initial World Seed and compact action history. It reproduces an Expedition exactly or serves as the origin for a new branch.
 _Avoid_: save file, share link
+
+**Mercy, Resolve, Curiosity, Defiance, and Kinship**:
+The five Expedition Traits through which a player sees their Choice Vector. Together they are the forces that shape an Expedition’s generated content.
+_Avoid_: morality, alignment axes
