@@ -55,3 +55,7 @@ _Avoid_: act, level
 **Asset Grammar**:
 The authored library of visual shapes, textures, palettes, and composition rules from which Generation Rules create a cohesive Expedition’s visuals.
 _Avoid_: asset pack, AI image generator
+
+**Expedition Code**:
+A portable record of an Expedition’s initial World Seed and compact action history. It reproduces an Expedition exactly or serves as the origin for a new branch.
+_Avoid_: save file, share link
