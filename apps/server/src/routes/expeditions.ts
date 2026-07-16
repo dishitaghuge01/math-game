@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { Router, type NextFunction, type Request, type Response } from 'express';
-import { loadExpedition, resolveCombatAction, resolveDiscovery, retreatToCamp, startExpedition, travelToLocation } from '../services/expeditionService.js';
+import { loadExpedition, resolveCombatAction, resolveDiscovery, resolveSocial, retreatToCamp, startExpedition, travelToLocation } from '../services/expeditionService.js';
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -24,6 +24,7 @@ router.post('/expeditions/:expeditionId/actions', (req: Request, res: Response, 
     if (type === 'combat' && (req.body.action === 'basic' || req.body.action === 'guard' || req.body.action === 'signature')) return res.json(resolveCombatAction(expeditionId, req.body.action));
     if (type === 'retreat') return res.json(retreatToCamp(expeditionId));
     if (type === 'discovery' && (req.body.choice === 'search' || req.body.choice === 'press-on')) return res.json(resolveDiscovery(expeditionId, req.body.choice));
+    if (type === 'social' && (req.body.choice === 'share' || req.body.choice === 'command')) return res.json(resolveSocial(expeditionId, req.body.choice));
     return res.status(400).json({ error: 'Invalid Expedition action' });
   } catch (error) {
     next(error);

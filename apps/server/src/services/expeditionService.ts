@@ -14,7 +14,7 @@ export interface RegionLocation {
 export interface ExpeditionState {
   expeditionId: string;
   worldSeed: number;
-  party: Array<{ role: PartyRole; name: string; motive: string; portrait: string; health: number; maxHealth: number; abilities: string[] }>;
+  party: Array<{ role: PartyRole; name: string; motive: string; portrait: string; health: number; maxHealth: number; abilities: string[]; bond: number }>;
   traits: Record<'mercy' | 'resolve' | 'curiosity' | 'defiance' | 'kinship', { tier: string; recentShift: string }>;
   region: { name: string; currentLocationId: string; campLocationId: string; locations: RegionLocation[] };
   combat: { status: 'active' | 'victory' | 'defeat'; enemy: { name: string; health: number; maxHealth: number }; activeMemberRole: PartyRole; log: string[] } | null;
@@ -73,6 +73,23 @@ export function travelToLocation(expeditionId: string, destinationId: string): E
     const neighbor = state.region.locations.find((location) => location.id === neighborId);
     if (neighbor) neighbor.revealed = true;
   }
+  saveExpedition(state);
+  return state;
+}
+
+export function resolveSocial(expeditionId: string, choice: 'share' | 'command'): ExpeditionState {
+  const state = loadExpedition(expeditionId);
+  if (!state) throw Object.assign(new Error('Expedition not found'), { status: 404 });
+  const location = state.region.locations.find((entry) => entry.id === state.region.currentLocationId);
+  if (location?.type !== 'social') throw Object.assign(new Error('No Social Encounter at this location'), { status: 400 });
+  if (choice === 'share') {
+    state.traits.kinship = { tier: 'gathering', recentShift: 'rising' };
+    state.party.forEach((member) => { member.bond += 1; });
+  } else {
+    state.traits.defiance = { tier: 'kindling', recentShift: 'rising' };
+    state.party.forEach((member) => { member.bond = Math.max(-3, member.bond - 1); });
+  }
+  location.type = 'landmark';
   saveExpedition(state);
   return state;
 }
@@ -166,7 +183,7 @@ function createPartyMember(role: PartyRole, seed: number, index: number) {
   const motive = motives[role][seededIndex(seed, index + 7, motives[role].length)];
   const maxHealth = role === 'fighter' ? 24 : role === 'mage' ? 16 : 20;
   const abilityStem = names[role][seededIndex(seed, index + 19, names[role].length)];
-  return { role, name, motive, portrait: `${role}-sigil-${seededIndex(seed, index + 13, 9)}`, health: maxHealth, maxHealth, abilities: [`${abilityStem}'s strike`, `${abilityStem}'s guard`, `${abilityStem}'s signature`] };
+  return { role, name, motive, portrait: `${role}-sigil-${seededIndex(seed, index + 13, 9)}`, health: maxHealth, maxHealth, bond: 0, abilities: [`${abilityStem}'s strike`, `${abilityStem}'s guard`, `${abilityStem}'s signature`] };
 }
 
 function seededIndex(seed: number, offset: number, length: number): number {
