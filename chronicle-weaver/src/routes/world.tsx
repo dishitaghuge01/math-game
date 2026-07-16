@@ -63,6 +63,7 @@ function RegionMapPage() {
           state={state}
           busy={travel.isPending}
           onAction={(action) => travel.mutate({ type: "combat", action })}
+          onRetreat={() => travel.mutate({ type: "retreat" })}
         />
       )}
       {current.type === "discovery" && (
@@ -106,10 +107,12 @@ function CombatPanel({
   state,
   busy,
   onAction,
+  onRetreat,
 }: {
   state: ExpeditionState;
   busy: boolean;
   onAction: (action: "basic" | "guard" | "signature") => void;
+  onRetreat: () => void;
 }) {
   const combat = state.combat!;
   return (
@@ -138,6 +141,13 @@ function CombatPanel({
           </button>
         ))}
       </div>
+      <button
+        disabled={busy}
+        onClick={onRetreat}
+        className="mt-4 font-hand italic text-sm underline text-[color:var(--color-blood)]"
+      >
+        Retreat to Camp
+      </button>
       <p className="font-hand italic text-sm mt-4">{combat.log.at(-1)}</p>
     </section>
   );
