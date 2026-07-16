@@ -18,6 +18,7 @@ export interface ExpeditionState {
   traits: Record<'mercy' | 'resolve' | 'curiosity' | 'defiance' | 'kinship', { tier: string; recentShift: string }>;
   region: { name: string; currentLocationId: string; locations: RegionLocation[] };
   combat: { status: 'active' | 'victory' | 'defeat'; enemy: { name: string; health: number; maxHealth: number }; activeMemberRole: PartyRole; log: string[] } | null;
+  resources: { gold: number; experience: number; potions: number };
 }
 
 const names: Record<PartyRole, string[]> = {
@@ -48,6 +49,7 @@ export function startExpedition(expeditionId: string, requestedSeed?: number): E
     },
     region: createRegion(worldSeed),
     combat: null,
+    resources: { gold: 0, experience: 0, potions: 2 },
   };
   const now = new Date().toISOString();
   db.prepare('INSERT INTO expeditions (expedition_id, state_json, created_at, updated_at) VALUES (?, ?, ?, ?)')
@@ -84,7 +86,9 @@ export function resolveCombatAction(expeditionId: string, action: 'basic' | 'gua
   state.combat.log.push(`${actingRole} uses ${action} for ${damage} damage.`);
   if (state.combat.enemy.health === 0) {
     state.combat.status = 'victory';
-    state.combat.log.push('The road is clear.');
+    state.resources.gold += 5;
+    state.resources.experience += 10;
+    state.combat.log.push('The road is clear. The Party claims 5 gold and 10 experience.');
   } else {
     const target = state.party.find((member) => member.role === actingRole)!;
     const incomingDamage = action === 'guard' ? 1 : 3;

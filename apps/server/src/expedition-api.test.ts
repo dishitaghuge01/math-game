@@ -81,5 +81,13 @@ describe('Expedition API', () => {
     expect(afterAction.party.every((member) => member.health <= member.maxHealth && member.abilities.length === 3)).toBe(true);
     expect(afterAction.party.find((member) => member.role === 'fighter')?.health).toBeLessThan(24);
     expect(afterAction.combat.log.length).toBeGreaterThan(1);
+
+    let state = afterAction as unknown as { combat: { status: string }; resources: { gold: number; experience: number } };
+    for (let turn = 0; turn < 2; turn += 1) {
+      const response = await fetch(`${baseUrl}/expeditions/${expeditionId}/actions`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'combat', action: 'signature' }) });
+      state = await response.json() as typeof state;
+    }
+    expect(state.combat.status).toBe('victory');
+    expect(state.resources).toEqual({ gold: 5, experience: 10, potions: 2 });
   });
 });
