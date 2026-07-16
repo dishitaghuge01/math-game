@@ -115,26 +115,13 @@ export class OverworldScene extends Phaser.Scene {
   }
 
   private drawMap() {
-    const terrainPalette = this.expedition.worldSeed % 3 === 0 ? [0x263f52, 0x31546b] : this.expedition.worldSeed % 3 === 1 ? [0x355548, 0x2d493f] : [0x4c4834, 0x635d42];
+    const terrainPalette = this.expedition.worldSeed % 3 === 0 ? [0x4c7185, 0x3e6378] : this.expedition.worldSeed % 3 === 1 ? [0x557963, 0x486d58] : [0x716a4d, 0x625c43];
     for (let x = 0; x < WORLD_WIDTH; x += 32) for (let y = 0; y < WORLD_HEIGHT; y += 32) {
       const roll = seededTerrain(this.expedition.worldSeed, x, y);
       this.add.rectangle(x + 16, y + 16, 32, 32, terrainPalette[roll % terrainPalette.length]);
       if (roll % 19 === 0) this.add.image(x + 16, y + 16, "prop-tree").setScale(0.6).setDepth(1);
       if (roll % 41 === 0) this.add.image(x + 16, y + 16, "prop-stone").setScale(0.45).setDepth(1);
     }
-    const walls = this.physics.add.staticGroup();
-    for (let x = 16; x < WORLD_WIDTH; x += 32) {
-      walls.create(x, 16, "wall");
-      walls.create(x, WORLD_HEIGHT - 16, "wall");
-    }
-    for (let y = 48; y < WORLD_HEIGHT - 32; y += 32) {
-      walls.create(16, y, "wall");
-      walls.create(WORLD_WIDTH - 16, y, "wall");
-    }
-    // A visible ridge makes collision and route choice tangible in this slice.
-    for (let x = 352; x <= 704; x += 32) walls.create(x, 352, "wall");
-    for (let x = 928; x <= 1216; x += 32) walls.create(x, 544, "wall");
-
     const current = this.expedition.region.currentLocationId;
     const visible = this.expedition.region.locations.filter((location) => location.revealed || location.id === current);
     const positions = [[160, 160], [550, 180], [970, 220], [1320, 340], [1050, 660], [600, 640], [200, 580]];
@@ -142,7 +129,6 @@ export class OverworldScene extends Phaser.Scene {
     const [spawnX, spawnY] = positions[currentIndex] ?? [160, 160];
     this.player = this.physics.add.sprite(spawnX, spawnY + 42, "fighter-step-a").setDepth(5).play("fighter-walk");
     this.player.setCollideWorldBounds(true).setSize(12, 12).setOffset(2, 6);
-    this.physics.add.collider(this.player, walls);
     this.followers = this.expedition.party.slice(1).map((member, index) => this.add.sprite(spawnX - 20 - index * 18, spawnY + 50, `${member.role}-step-a`).setDepth(4).play(`${member.role}-walk`));
     this.add.text(12, 54, this.expedition.party.map((member) => `${member.name} ${member.health}/${member.maxHealth}`).join("  "), { fontFamily: "monospace", fontSize: "10px", color: "#f4deb0" }).setScrollFactor(0).setDepth(20);
     const locationPositions = new Map(visible.map((location, index) => [location.id, positions[index] ?? [180 + index * 80, 180]]));
