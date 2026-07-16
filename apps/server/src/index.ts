@@ -3,6 +3,7 @@ import cors from 'cors';
 import express, { type NextFunction, type Request, type Response } from 'express';
 
 import decisionRouter from './routes/decision.js';
+import gameRouter from './routes/game.js';
 import worldRouter from './routes/generate/world.js';
 import narrativeRouter from './routes/generate/narrative.js';
 import mechanicsRouter from './routes/generate/mechanics.js';
@@ -38,6 +39,7 @@ app.use(
 );
 
 app.use('/', decisionRouter);
+app.use('/', gameRouter);
 app.use('/generate', worldRouter);
 app.use('/generate', narrativeRouter);
 app.use('/generate', mechanicsRouter);
