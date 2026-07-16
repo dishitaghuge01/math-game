@@ -24,10 +24,11 @@
 - Signature Ability mechanics come from a finite, balanced procedural grammar: damage, shield, heal, buff, debuff, and turn manipulation. Seeded generation determines names, visual motifs, elemental affinities, and combinations according to role, personality, relationships, and Expedition Traits.
 - Defeat retreats the party to the most recent camp rather than ending an Expedition. The party loses consumable resources and the Region Map changes through closed routes, a rival’s advance, or a new opportunity; major choices and party development persist.
 - Each Region aims for approximately 50% combat Encounters, 30% discoveries or hazards, and 20% social Encounters. Every location must present a meaningful decision or tactical challenge; text-only filler locations are excluded.
+- The first release is a complete one-Region prologue: a generated three-member party, one Region Map, all three Encounter types, turn combat, Camp recovery, Trait shifts, generated SVG assets, and a miniature ending. The three-Region campaign follows only after this loop is proven.
 
-## Open decisions
+## Next step
 
-- First release scope
+Break the one-Region prologue into independently testable implementation tickets, then build in dependency order.
 - Choice Vector dimensions and how players perceive them
 - Campaign structure and ending conditions
 - Procedural asset style and production pipeline
