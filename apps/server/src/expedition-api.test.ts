@@ -139,6 +139,23 @@ describe('Expedition API', () => {
     expect(await (await fetch(`${baseUrl}/expeditions/${expeditionId}`)).json()).toMatchObject({ region: { rivalAdvanced: true } });
   });
 
+  it('resolves Mage weakening and Support healing/shield effects through the Expedition API', async () => {
+    const expeditionId = `signature-effects-test-${Date.now()}`;
+    const started = await fetch(`${baseUrl}/expeditions`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ expeditionId, worldSeed: 123456 }) });
+    const state = await started.json() as { region: { locations: Array<{ id: string; type: string }> } };
+    const combat = state.region.locations.find((location) => location.type === 'combat')!;
+    await fetch(`${baseUrl}/expeditions/${expeditionId}/actions`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'travel', destinationId: combat.id }) });
+    await fetch(`${baseUrl}/expeditions/${expeditionId}/actions`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'combat', action: 'basic' }) });
+    const mageTurn = await fetch(`${baseUrl}/expeditions/${expeditionId}/actions`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'combat', action: 'signature' }) });
+    const weakened = await mageTurn.json() as { party: Array<{ role: string; health: number }> };
+    expect(weakened.party.find((member) => member.role === 'mage')?.health).toBe(14);
+
+    const supportTurn = await fetch(`${baseUrl}/expeditions/${expeditionId}/actions`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'combat', action: 'signature' }) });
+    const supported = await supportTurn.json() as { party: Array<{ role: string; health: number; shield: number }> };
+    expect(supported.party.find((member) => member.role === 'support')?.shield).toBeGreaterThan(0);
+    expect(supported.party.find((member) => member.role === 'fighter')?.health).toBeGreaterThan(21);
+  });
+
   it('requires the major decision before resolving the final Encounter into a trait-shaped ending', async () => {
     const expeditionId = `prologue-test-${Date.now()}`;
     const started = await fetch(`${baseUrl}/expeditions`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ expeditionId, worldSeed: 5150 }) });
