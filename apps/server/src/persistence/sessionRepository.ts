@@ -23,6 +23,29 @@ export function saveVectorSnapshot(sessionId: string, nodeIndex: number, vector:
   `).run(sessionId, nodeIndex, JSON.stringify(vector), createdAt);
 }
 
+export function saveNarration(sessionId: string, nodeIndex: number, narrative: string): void {
+  const createdAt = new Date().toISOString();
+  db.prepare(`
+    INSERT OR REPLACE INTO narration_history (session_id, node_index, narrative, created_at)
+    VALUES (?, ?, ?, ?)
+  `).run(sessionId, nodeIndex, narrative, createdAt);
+}
+
+export function loadPreviousNarration(sessionId: string, nodeIndex: number): string | null {
+  const row = db.prepare(`
+    SELECT narrative
+    FROM narration_history
+    WHERE session_id = ? AND node_index = ?
+    LIMIT 1
+  `).get(sessionId, nodeIndex - 1) as { narrative: string } | undefined;
+
+  if (!row) {
+    return null;
+  }
+
+  return row.narrative;
+}
+
 export function loadVectorAtNodeIndex(sessionId: string, nodeIndex: number): DecisionVector | null {
   const row = db.prepare(`
     SELECT vector_json

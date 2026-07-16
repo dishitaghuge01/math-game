@@ -28,6 +28,14 @@ db.exec(`
     created_at TEXT NOT NULL
   );
 
+  CREATE TABLE IF NOT EXISTS narration_history (
+    session_id TEXT NOT NULL,
+    node_index INTEGER NOT NULL,
+    narrative TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    PRIMARY KEY (session_id, node_index)
+  );
+
   CREATE TABLE IF NOT EXISTS unlock_flags (
     session_id TEXT NOT NULL,
     flag TEXT NOT NULL,

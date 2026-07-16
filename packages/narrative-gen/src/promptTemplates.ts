@@ -16,9 +16,13 @@ function formatVector(v: DecisionVector): string {
   return parts.join(', ');
 }
 
-export function buildNarrationPrompt(node: PlotNode, memory: MemorySnippet[], vector: DecisionVector): string {
+export function buildNarrationPrompt(node: PlotNode, memory: MemorySnippet[], vector: DecisionVector, previousNarration: string | null = null): string {
   const header = `Narration task — node: ${node.symbol}\nTokens: ${node.tokens.join(' ')}\n`;
   const vectorSummary = `Player state summary: ${formatVector(vector)}.`;
+
+  const continuitySection = previousNarration
+    ? `Previous scene (continue directly from this — do not restart, re-introduce the setting,\nor re-describe the player arriving somewhere new):\n${previousNarration}`
+    : 'Previous scene: (this is the very beginning of the tale)';
 
   const memorySection = memory && memory.length > 0
     ? `Relevant memory/context:\n${memory.map((m) => `- ${m.content}`).join('\n')}`
@@ -34,10 +38,15 @@ export function buildNarrationPrompt(node: PlotNode, memory: MemorySnippet[], ve
     '- Do NOT contradict the memory snippets above; respect them as authoritative context.',
     '- Keep it SHORT: 2-4 sentences TOTAL across the whole node, regardless of how many tokens it',
     '  has — do not write one paragraph per token. Punchy over exhaustive. No filler, no throat-clearing.',
-    '- Write in third-person, present-tense.',
+    '- Write in SECOND PERSON ("you") — never say "the player."',
+    '- This is a continuation of an ONGOING scene/tale, not a new isolated vignette each time —',
+    '  reference what just happened where natural, do not reset the scene or re-describe surroundings',
+    '  already established.',
+    '- HARD LIMIT: no more than 3 sentences, no more than ~60 words total. This is not a suggestion —',
+    '  going over is a failure.',
   ].join('\n');
 
-  return [header, vectorSummary, '', memorySection, '', instruction, '', 'Narration:'].join('\n');
+  return [header, vectorSummary, '', continuitySection, '', memorySection, '', instruction, '', 'Narration:'].join('\n');
 }
 
 export function buildChoiceNarrationPrompt(node: PlotNode, archetype: string, vector: DecisionVector): string {

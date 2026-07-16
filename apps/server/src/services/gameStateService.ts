@@ -4,7 +4,7 @@ import { generatePlotSkeleton, narrateNode, generateChoicesForNode, narrateChoic
 import { enemyStatsFor, lootWeights } from '@math-game/mechanics-gen';
 import { SupermemoryClient } from '@math-game/memory-client';
 
-import { loadVectorAtNodeIndex, saveVectorSnapshot } from '../persistence/sessionRepository.js';
+import { loadPreviousNarration, loadVectorAtNodeIndex, saveNarration, saveVectorSnapshot } from '../persistence/sessionRepository.js';
 import * as sessionStore from './sessionStore.js';
 
 const HEIGHT_THRESHOLD_LOW = 0.25;
@@ -191,12 +191,16 @@ export async function generateNarrativeNode(
   const beats = generatePlotSkeleton(vectorForNode, mulberry32(seed), nodeIndex + 1);
   const node = beats[beats.length - 1];
 
+  const previousNarration = loadPreviousNarration(sessionId, nodeIndex);
   const memory = await supermemoryClient.search(sessionId, node?.symbol ?? 'story', 5).catch(() => []);
   const prose = await narrateNode(
     node ?? { id: `${sessionId}:${nodeIndex}`, symbol: 'STORY', tokens: [] },
     memory,
     vectorForNode,
+    previousNarration,
   );
+
+  saveNarration(sessionId, nodeIndex, prose);
 
   // Generate choices deterministically from (node, vector, rng)
   const choicesSeed = deriveSeed(vectorForNode, sessionId, `narrative:node:${nodeIndex}:choices`);
