@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 import type { ExpeditionState } from "@/api/gameApi";
+import { playCue } from "./AudioCue";
 
 const WIDTH = 768;
 const HEIGHT = 432;
@@ -18,6 +19,7 @@ export function openCampPresentation(scene: Phaser.Scene, expedition: Expedition
 }
 
 export function openEndingPresentation(scene: Phaser.Scene, expedition: ExpeditionState) {
+  playCue("victory");
   const ending = expedition.ending!;
   const overlay = scene.add.container(0, 0).setDepth(35).setScrollFactor(0);
   overlay.add(scene.add.rectangle(WIDTH / 2, HEIGHT / 2, WIDTH, HEIGHT, 0x172337, 0.98));

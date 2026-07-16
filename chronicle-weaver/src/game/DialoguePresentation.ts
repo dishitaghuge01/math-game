@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 import type { ExpeditionState } from "@/api/gameApi";
+import { playCue } from "./AudioCue";
 import type { ExpeditionAction } from "./types";
 
 const WIDTH = 768;
@@ -29,10 +30,10 @@ export function openEncounterDialogue(scene: Phaser.Scene, expedition: Expeditio
   let selected = 0;
   const selector = scene.add.text(156, 258, "▶", { fontFamily: "monospace", fontSize: "14px", color: "#ffcf70" });
   const updateSelector = () => selector.setY(258 + selected * 48);
-  const choose = () => submit(choices[selected][1]);
+  const choose = () => { playCue("confirm"); submit(choices[selected][1]); };
   choices.forEach(([label, action], index) => {
     const option = scene.add.text(180, 250 + index * 48, label, { fontFamily: "monospace", fontSize: "15px", color: "#f4deb0", backgroundColor: "#30283a", padding: { x: 10, y: 8 } }).setInteractive({ useHandCursor: true });
-    option.on("pointerdown", () => submit(action));
+    option.on("pointerdown", () => { playCue("confirm"); submit(action); });
     option.on("pointerover", () => { selected = index; updateSelector(); });
     overlay.add(option);
     scene.input.keyboard!.once(index === 0 ? "keydown-ONE" : "keydown-TWO", () => submit(action));
@@ -56,6 +57,7 @@ function addTypewriterText(scene: Phaser.Scene, x: number, y: number, line: stri
   const reveal = () => {
     cursor += 1;
     text.setText(line.slice(0, cursor));
+    if (cursor % 3 === 0) playCue("dialogue");
     if (cursor >= line.length) timer.remove(false);
   };
   const timer = scene.time.addEvent({ delay: 18, repeat: line.length - 1, callback: reveal });

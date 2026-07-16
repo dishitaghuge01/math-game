@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 import type { ExpeditionState } from "@/api/gameApi";
+import { playCue } from "./AudioCue";
 import type { ExpeditionAction } from "./types";
 
 const WIDTH = 768;
@@ -34,8 +35,9 @@ export function openBattlePresentation(scene: Phaser.Scene, expedition: Expediti
   (["STRIKE", "GUARD", "SIGNATURE", "ITEM", "RETREAT"] as const).forEach((label, index) => {
     const button = scene.add.text(38 + index * 146, 370, `[ ${label} ]`, { fontFamily: "monospace", fontSize: "15px", color: "#f4deb0", backgroundColor: "#30283a", padding: { x: 8, y: 8 } }).setInteractive({ useHandCursor: true });
     const action = label === "RETREAT" ? { type: "retreat" } as const : { type: "combat", action: label === "STRIKE" ? "basic" : label === "GUARD" ? "guard" : label === "SIGNATURE" ? "signature" : "item" } as const;
-    button.on("pointerdown", () => selectAction(action));
-    scene.input.keyboard!.once(["keydown-ONE", "keydown-TWO", "keydown-THREE", "keydown-FOUR", "keydown-FIVE"][index], () => selectAction(action));
+    const choose = () => { playCue(action.type === "combat" && action.action === "item" ? "heal" : "confirm"); selectAction(action); };
+    button.on("pointerdown", choose);
+    scene.input.keyboard!.once(["keydown-ONE", "keydown-TWO", "keydown-THREE", "keydown-FOUR", "keydown-FIVE"][index], choose);
     overlay.add(button);
   });
 }
