@@ -255,12 +255,8 @@ class OverworldScene extends Phaser.Scene {
     this.add.text(VIEW_WIDTH / 2, 120, "DODGE THE FOG", { fontFamily: "monospace", fontSize: "16px", color: "#f4deb0" }).setOrigin(0.5).setDepth(32).setScrollFactor(0);
     this.soul = this.add.rectangle(VIEW_WIDTH / 2, VIEW_HEIGHT / 2, 12, 12, 0xff4f6d).setDepth(32).setScrollFactor(0);
     this.bullets = this.add.group();
-    const spawn = this.time.addEvent({ delay: 260, repeat: 11, callback: () => {
-      const x = Phaser.Math.Between(250, 518);
-      const bullet = this.add.rectangle(x, 162, 9, 9, 0xe8e4da).setDepth(32).setScrollFactor(0);
-      bullet.setData("speed", Phaser.Math.Between(85, 140));
-      this.bullets!.add(bullet);
-    }});
+    const pattern = this.expedition.worldSeed % 3;
+    const spawn = this.time.addEvent({ delay: pattern === 2 ? 180 : 260, repeat: pattern === 1 ? 16 : 11, callback: () => this.spawnEnemyProjectile(pattern) });
     this.time.delayedCall(3300, () => {
       spawn.remove(false);
       this.bullets?.clear(true, true);
@@ -274,6 +270,21 @@ class OverworldScene extends Phaser.Scene {
     });
   }
 
+  private spawnEnemyProjectile(pattern: number) {
+    if (!this.bullets) return;
+    const bullet = this.add.rectangle(0, 0, 9, 9, 0xe8e4da).setDepth(32).setScrollFactor(0);
+    if (pattern === 0) {
+      bullet.setPosition(Phaser.Math.Between(250, 518), 162).setData("vy", Phaser.Math.Between(85, 140));
+    } else if (pattern === 1) {
+      const fromLeft = this.bullets.getLength() % 2 === 0;
+      bullet.setPosition(fromLeft ? 222 : 546, Phaser.Math.Between(165, 280)).setData("vx", fromLeft ? 150 : -150).setData("vy", 0);
+    } else {
+      const angle = this.bullets.getLength() * 0.9;
+      bullet.setPosition(384 + Math.cos(angle) * 145, 216 + Math.sin(angle) * 65).setData("vx", -Math.cos(angle) * 75).setData("vy", -Math.sin(angle) * 75);
+    }
+    this.bullets.add(bullet);
+  }
+
   private updateDodge() {
     if (!this.soul || !this.bullets) return;
     const speed = 3.2;
@@ -283,8 +294,9 @@ class OverworldScene extends Phaser.Scene {
     if (this.keys.down.isDown) this.soul.y = Phaser.Math.Clamp(this.soul.y + speed, 148, 284);
     this.bullets.getChildren().forEach((bullet) => {
       const projectile = bullet as Phaser.GameObjects.Rectangle;
-      projectile.y += projectile.getData("speed") * (1 / 60);
-      if (projectile.y > 292) projectile.destroy();
+      projectile.x += (projectile.getData("vx") ?? 0) * (1 / 60);
+      projectile.y += (projectile.getData("vy") ?? projectile.getData("speed")) * (1 / 60);
+      if (projectile.y > 302 || projectile.x < 208 || projectile.x > 560) projectile.destroy();
       if (Phaser.Geom.Intersects.RectangleToRectangle(this.soul!.getBounds(), projectile.getBounds())) {
         if (this.time.now >= this.invulnerableUntil) {
           this.dodgeHits += 1;
