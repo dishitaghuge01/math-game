@@ -71,3 +71,7 @@ _Avoid_: story AI, chatbot
 **Party Origin**:
 The seeded set of each Expedition Party member’s visual identity, combat role, personal motive, and initial interpersonal tensions.
 _Avoid_: character creation, companion recruitment
+
+**Fighter, Mage, and Support**:
+The three complementary combat role foundations in every Expedition Party: protection, magical control and damage, and healing/buffs respectively. Seeded generation changes their identities and expression, not these tactical responsibilities.
+_Avoid_: vanguard, weaver, striker

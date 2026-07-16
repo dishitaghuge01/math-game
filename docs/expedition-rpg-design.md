@@ -20,10 +20,11 @@
 - The five player-facing Expedition Traits are Mercy, Resolve, Curiosity, Defiance, and Kinship. They are the interpretations of the Choice Vector that shape procedural content.
 - Canonical story facts—regions, factions, character arcs, quests, discoveries, consequences, and endings—are produced by deterministic Generation Rules and a seeded narrative grammar. An optional LLM may polish those established facts into prose, but cannot introduce canonical facts or outcomes.
 - Each Expedition begins with all three procedurally generated party members. The World Seed establishes each member’s visual identity, combat role, personal motive, and initial tensions; player choices and combat use develop or strain their relationships.
+- Every party has three complementary role foundations: a Fighter who absorbs pressure and protects allies, a Mage who controls conditions and deals magical damage, and a Support character who heals, buffs, and alters turn economy. Seeded generation varies their identities and expressions while preserving these tactical responsibilities.
 
 ## Open decisions
 
-- Combat role model
+- Signature Ability generation model
 - Choice Vector dimensions and how players perceive them
 - Campaign structure and ending conditions
 - Procedural asset style and production pipeline
