@@ -46,6 +46,23 @@ export interface PaletteResponse {
   palette: string[];
 }
 
+export interface RpgCombat {
+  player: { name: string; health: number; maxHealth: number; attack: number };
+  enemy: { name: string; health: number; maxHealth: number; attack: number };
+  potions: number;
+  status: "active" | "victory" | "defeat";
+}
+
+export interface RpgGameState {
+  grid: number[][];
+  revealed: boolean[][];
+  position: { row: number; col: number };
+  gold: number;
+  experience: number;
+  combat: RpgCombat | null;
+  log: string[];
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE_URL}${path}`, {
     ...init,
@@ -107,6 +124,19 @@ export async function fetchMechanics(baseDifficulty = 1): Promise<MechanicsRespo
   const { sessionId } = getOrCreateClientIds();
   const q = new URLSearchParams({ sessionId, baseDifficulty: String(baseDifficulty) });
   return request<MechanicsResponse>(`/generate/mechanics?${q.toString()}`);
+}
+
+export async function fetchRpgGame(): Promise<RpgGameState> {
+  const { sessionId } = getOrCreateClientIds();
+  return request<RpgGameState>(`/game?${new URLSearchParams({ sessionId }).toString()}`);
+}
+
+export async function postRpgAction(action: unknown): Promise<RpgGameState> {
+  const { sessionId } = getOrCreateClientIds();
+  return request<RpgGameState>("/game/action", {
+    method: "POST",
+    body: JSON.stringify({ sessionId, action }),
+  });
 }
 
 export async function fetchPalette(): Promise<PaletteResponse> {
