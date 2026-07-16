@@ -75,3 +75,7 @@ _Avoid_: character creation, companion recruitment
 **Fighter, Mage, and Support**:
 The three complementary combat role foundations in every Expedition Party: protection, magical control and damage, and healing/buffs respectively. Seeded generation changes their identities and expression, not these tactical responsibilities.
 _Avoid_: vanguard, weaver, striker
+
+**Ability Grammar**:
+The finite, balanced set of combat effects used to construct Signature Abilities. It permits damage, shields, healing, buffs, debuffs, and turn manipulation.
+_Avoid_: random abilities, freeform spells
