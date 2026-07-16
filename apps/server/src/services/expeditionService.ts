@@ -16,7 +16,7 @@ export interface ExpeditionState {
   worldSeed: number;
   party: Array<{ role: PartyRole; name: string; motive: string; portrait: string; health: number; maxHealth: number; abilities: string[] }>;
   traits: Record<'mercy' | 'resolve' | 'curiosity' | 'defiance' | 'kinship', { tier: string; recentShift: string }>;
-  region: { name: string; currentLocationId: string; locations: RegionLocation[] };
+  region: { name: string; currentLocationId: string; campLocationId: string; locations: RegionLocation[] };
   combat: { status: 'active' | 'victory' | 'defeat'; enemy: { name: string; health: number; maxHealth: number }; activeMemberRole: PartyRole; log: string[] } | null;
   resources: { gold: number; experience: number; potions: number };
 }
@@ -65,6 +65,7 @@ export function travelToLocation(expeditionId: string, destinationId: string): E
   if (!origin?.connectedTo.includes(destinationId) || !destination) throw Object.assign(new Error('Destination is not reachable'), { status: 400 });
   state.region.currentLocationId = destinationId;
   destination.revealed = true;
+  if (destination.type === 'camp') state.region.campLocationId = destinationId;
   if (destination.type === 'combat') {
     state.combat = { status: 'active', enemy: { name: 'Fogbound Revenant', health: 18, maxHealth: 18 }, activeMemberRole: 'fighter', log: ['A Fogbound Revenant bars the road.'] };
   }
@@ -72,6 +73,21 @@ export function travelToLocation(expeditionId: string, destinationId: string): E
     const neighbor = state.region.locations.find((location) => location.id === neighborId);
     if (neighbor) neighbor.revealed = true;
   }
+  saveExpedition(state);
+  return state;
+}
+
+export function retreatToCamp(expeditionId: string): ExpeditionState {
+  const state = loadExpedition(expeditionId);
+  if (!state) throw Object.assign(new Error('Expedition not found'), { status: 404 });
+  if (!state.combat || state.combat.status !== 'active') throw Object.assign(new Error('No active Combat Encounter'), { status: 400 });
+  state.combat.status = 'defeat';
+  state.combat.log.push('The Party retreats to Camp.');
+  state.region.currentLocationId = state.region.campLocationId;
+  state.resources.gold = Math.max(0, state.resources.gold - 2);
+  state.resources.potions = Math.max(0, state.resources.potions - 1);
+  const blocked = state.region.locations.find((location) => location.type === 'landmark');
+  if (blocked) blocked.revealed = false;
   saveExpedition(state);
   return state;
 }
@@ -126,7 +142,7 @@ function createRegion(seed: number): ExpeditionState['region'] {
     locations[index].connectedTo.push(locations[index + 1].id);
     locations[index + 1].connectedTo.push(locations[index].id);
   }
-  return { name: 'The Fogbound Moor', currentLocationId: locations[0].id, locations };
+  return { name: 'The Fogbound Moor', currentLocationId: locations[0].id, campLocationId: locations[0].id, locations };
 }
 
 function createPartyMember(role: PartyRole, seed: number, index: number) {
