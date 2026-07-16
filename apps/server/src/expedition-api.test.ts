@@ -103,6 +103,17 @@ describe('Expedition API', () => {
     expect(state.resources).toEqual({ gold: 5, experience: 10, potions: 2 });
   });
 
+  it('applies a Guard shield before the authoritative enemy response', async () => {
+    const expeditionId = `shield-test-${Date.now()}`;
+    const started = await fetch(`${baseUrl}/expeditions`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ expeditionId, worldSeed: 7070 }) });
+    const state = await started.json() as { region: { locations: Array<{ id: string; type: string }> } };
+    const combat = state.region.locations.find((location) => location.type === 'combat')!;
+    await fetch(`${baseUrl}/expeditions/${expeditionId}/actions`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'travel', destinationId: combat.id }) });
+    const response = await fetch(`${baseUrl}/expeditions/${expeditionId}/actions`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'combat', action: 'guard' }) });
+    const after = await response.json() as { party: Array<{ role: string; health: number; shield: number }> };
+    expect(after.party.find((member) => member.role === 'fighter')).toMatchObject({ health: 24, shield: 1 });
+  });
+
   it('uses reported dodge hits to increase the authoritative enemy response', async () => {
     const expeditionId = `dodge-test-${Date.now()}`;
     const started = await fetch(`${baseUrl}/expeditions`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ expeditionId, worldSeed: 9090 }) });

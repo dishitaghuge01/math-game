@@ -55,6 +55,7 @@ export interface ExpeditionState {
     portrait: string;
     health: number;
     maxHealth: number;
+    shield: number;
     abilities: string[];
     bond: number;
   }>;

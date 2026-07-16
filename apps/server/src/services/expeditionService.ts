@@ -26,7 +26,7 @@ export interface SignatureAbility {
 export interface ExpeditionState {
   expeditionId: string;
   worldSeed: number;
-  party: Array<{ role: PartyRole; name: string; motive: string; portrait: string; health: number; maxHealth: number; abilities: string[]; signatureAbility: SignatureAbility; bond: number }>;
+  party: Array<{ role: PartyRole; name: string; motive: string; portrait: string; health: number; maxHealth: number; shield: number; abilities: string[]; signatureAbility: SignatureAbility; bond: number }>;
   traits: Record<'mercy' | 'resolve' | 'curiosity' | 'defiance' | 'kinship', { tier: string; recentShift: string }>;
   region: { name: string; currentLocationId: string; campLocationId: string; rivalAdvanced: boolean; locations: RegionLocation[] };
   combat: { status: 'active' | 'victory' | 'defeat'; enemy: { name: string; health: number; maxHealth: number }; activeMemberRole: PartyRole; log: string[] } | null;
@@ -161,6 +161,7 @@ export function resolveCombatAction(expeditionId: string, action: 'basic' | 'gua
   const actor = state.party.find((member) => member.role === actingRole)!;
   const signatureDamage: Record<PartyRole, number> = { fighter: 6, mage: 8, support: 4 };
   if (action === 'item' && state.resources.potions === 0) throw Object.assign(new Error('No potions remain'), { status: 400 });
+  if (action === 'guard') actor.shield += 2;
   const damage = action === 'signature' && actor.signatureAbility.effects.includes('damage') ? signatureDamage[actingRole] : action === 'basic' ? 4 : action === 'guard' ? 1 : 0;
   if (action === 'item') {
     state.resources.potions -= 1;
@@ -188,8 +189,11 @@ export function resolveCombatAction(expeditionId: string, action: 'basic' | 'gua
     const target = state.party.find((member) => member.role === actingRole)!;
     const baseDamage = action === 'guard' ? 1 : action === 'item' ? 2 : 3;
     const incomingDamage = baseDamage + Math.max(0, Math.floor(dodgeHits));
-    target.health = Math.max(0, target.health - incomingDamage);
-    state.combat.log.push(`${state.combat.enemy.name} strikes ${target.name} for ${incomingDamage} damage after ${dodgeHits} dodge hits.`);
+    const absorbed = Math.min(target.shield, incomingDamage);
+    target.shield -= absorbed;
+    const damageTaken = incomingDamage - absorbed;
+    target.health = Math.max(0, target.health - damageTaken);
+    state.combat.log.push(`${state.combat.enemy.name} strikes ${target.name} for ${damageTaken} damage after ${dodgeHits} dodge hits${absorbed ? `; shield absorbs ${absorbed}` : ''}.`);
     if (state.party.every((member) => member.health === 0)) {
       state.combat.status = 'defeat';
       state.combat.log.push('The Party falls and returns to Camp.');
@@ -302,7 +306,7 @@ function createPartyMember(role: PartyRole, seed: number, index: number) {
     fighter: ['damage', 'shield'], mage: ['damage', 'debuff'], support: ['damage', 'healing', 'buff'],
   };
   const signatureAbility = { name: `${abilityStem}'s signature`, effects: effects[role] };
-  return { role, name, motive, portrait: `${role}-sigil-${seededIndex(seed, index + 13, 9)}`, health: maxHealth, maxHealth, bond: 0, abilities: [`${abilityStem}'s strike`, `${abilityStem}'s guard`, signatureAbility.name], signatureAbility };
+  return { role, name, motive, portrait: `${role}-sigil-${seededIndex(seed, index + 13, 9)}`, health: maxHealth, maxHealth, shield: 0, bond: 0, abilities: [`${abilityStem}'s strike`, `${abilityStem}'s guard`, signatureAbility.name], signatureAbility };
 }
 
 function seededIndex(seed: number, offset: number, length: number): number {
