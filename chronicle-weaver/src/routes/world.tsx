@@ -65,6 +65,34 @@ function RegionMapPage() {
           onAction={(action) => travel.mutate({ type: "combat", action })}
         />
       )}
+      {current.type === "discovery" && (
+        <ChoicePanel
+          title="The Listening Well"
+          prompt="The water reflects a road that does not yet exist."
+          choices={[
+            ["search", "Search the depths"],
+            ["press-on", "Press into the fog"],
+          ]}
+          busy={travel.isPending}
+          onChoose={(choice) =>
+            travel.mutate({ type: "discovery", choice: choice as "search" | "press-on" })
+          }
+        />
+      )}
+      {current.type === "social" && (
+        <ChoicePanel
+          title="Pilgrim Lanterns"
+          prompt="The Party disagrees on what the distant lights promise."
+          choices={[
+            ["share", "Share the burden"],
+            ["command", "Command the path"],
+          ]}
+          busy={travel.isPending}
+          onChoose={(choice) =>
+            travel.mutate({ type: "social", choice: choice as "share" | "command" })
+          }
+        />
+      )}
       <div className="mt-6 flex justify-center">
         <button onClick={() => navigate({ to: "/" })} className="font-hand italic underline">
           consult the Expedition Party
@@ -111,6 +139,39 @@ function CombatPanel({
         ))}
       </div>
       <p className="font-hand italic text-sm mt-4">{combat.log.at(-1)}</p>
+    </section>
+  );
+}
+
+function ChoicePanel({
+  title,
+  prompt,
+  choices,
+  busy,
+  onChoose,
+}: {
+  title: string;
+  prompt: string;
+  choices: string[][];
+  busy: boolean;
+  onChoose: (choice: string) => void;
+}) {
+  return (
+    <section className="parchment-card mt-6 p-6 text-center">
+      <h2 className="font-display text-2xl">{title}</h2>
+      <p className="font-hand italic mt-2">{prompt}</p>
+      <div className="grid sm:grid-cols-2 gap-3 mt-5">
+        {choices.map(([choice, label]) => (
+          <button
+            key={choice}
+            disabled={busy}
+            onClick={() => onChoose(choice)}
+            className="p-3 bg-[color:var(--color-ink)] text-[color:var(--color-parchment)] font-heading uppercase tracking-wider text-xs hover:bg-[color:var(--color-ember)]"
+          >
+            {label}
+          </button>
+        ))}
+      </div>
     </section>
   );
 }

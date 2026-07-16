@@ -56,6 +56,7 @@ export interface ExpeditionState {
     health: number;
     maxHealth: number;
     abilities: string[];
+    bond: number;
   }>;
   traits: Record<
     "mercy" | "resolve" | "curiosity" | "defiance" | "kinship",
@@ -171,7 +172,10 @@ export async function startExpedition(): Promise<ExpeditionState> {
 export async function postExpeditionAction(
   action:
     | { type: "travel"; destinationId: string }
-    | { type: "combat"; action: "basic" | "guard" | "signature" },
+    | { type: "combat"; action: "basic" | "guard" | "signature" }
+    | { type: "discovery"; choice: "search" | "press-on" }
+    | { type: "social"; choice: "share" | "command" }
+    | { type: "retreat" },
 ): Promise<ExpeditionState> {
   const { sessionId } = getOrCreateClientIds();
   return request<ExpeditionState>(`/expeditions/${encodeURIComponent(sessionId)}/actions`, {
