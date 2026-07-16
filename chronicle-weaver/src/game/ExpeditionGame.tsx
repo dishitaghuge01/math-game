@@ -337,10 +337,31 @@ class OverworldScene extends Phaser.Scene {
     overlay.add(this.add.text(VIEW_WIDTH / 2, 155, title, { fontFamily: "monospace", fontSize: "26px", color: victory ? "#f4deb0" : "#ff8592" }).setOrigin(0.5));
     overlay.add(this.add.text(VIEW_WIDTH / 2, 215, detail, { fontFamily: "monospace", fontSize: "14px", color: "#ffffff", align: "center", wordWrap: { width: 480 } }).setOrigin(0.5));
     const continueButton = this.add.text(VIEW_WIDTH / 2, 320, "[ CONTINUE ]", { fontFamily: "monospace", fontSize: "16px", color: "#f4deb0", backgroundColor: "#30283a", padding: { x: 12, y: 9 } }).setOrigin(0.5).setInteractive({ useHandCursor: true });
-    const close = () => overlay.destroy(true);
+    const close = () => {
+      overlay.destroy(true);
+      if (victory && this.expedition.ending) this.openEndingScene();
+    };
     continueButton.on("pointerdown", close);
     this.input.keyboard!.once("keydown-ENTER", close);
     overlay.add(continueButton);
+  }
+
+  private openEndingScene() {
+    const ending = this.expedition.ending!;
+    const overlay = this.add.container(0, 0).setDepth(35).setScrollFactor(0);
+    overlay.add(this.add.rectangle(VIEW_WIDTH / 2, VIEW_HEIGHT / 2, VIEW_WIDTH, VIEW_HEIGHT, 0x172337, 0.98));
+    for (let index = 0; index < 18; index += 1) {
+      const x = 70 + (index * 97) % 650;
+      const y = 60 + (index * 53) % 300;
+      overlay.add(this.add.circle(x, y, 2 + index % 3, 0xf4deb0, 0.7));
+    }
+    overlay.add(this.add.text(VIEW_WIDTH / 2, 105, "PROLOGUE COMPLETE", { fontFamily: "monospace", fontSize: "13px", color: "#b6a37c" }).setOrigin(0.5));
+    overlay.add(this.add.text(VIEW_WIDTH / 2, 160, ending.title.toUpperCase(), { fontFamily: "monospace", fontSize: "28px", color: "#f4deb0" }).setOrigin(0.5));
+    overlay.add(this.add.text(VIEW_WIDTH / 2, 230, ending.summary, { fontFamily: "monospace", fontSize: "15px", color: "#ffffff", align: "center", lineSpacing: 8, wordWrap: { width: 520 } }).setOrigin(0.5));
+    const close = this.add.text(VIEW_WIDTH / 2, 350, "[ RETURN TO THE MOOR ]", { fontFamily: "monospace", fontSize: "14px", color: "#f4deb0", backgroundColor: "#30283a", padding: { x: 10, y: 8 } }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+    close.on("pointerdown", () => overlay.destroy(true));
+    this.input.keyboard!.once("keydown-ENTER", () => overlay.destroy(true));
+    overlay.add(close);
   }
 }
 
