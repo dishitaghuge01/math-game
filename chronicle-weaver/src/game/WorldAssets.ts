@@ -1,13 +1,24 @@
 import Phaser from "phaser";
 
 export function ensureWorldTextures(scene: Phaser.Scene) {
-  if (scene.textures.exists("party-step-a")) return;
+  if (scene.textures.exists("fighter-step-a")) return;
   const paint = scene.add.graphics();
-  paint.fillStyle(0xf4deb0).fillRect(2, 0, 12, 14).fillStyle(0x251d2a).fillRect(1, 14, 5, 4).fillRect(10, 14, 5, 4);
-  paint.generateTexture("party-step-a", 16, 18).clear();
-  paint.fillStyle(0xf4deb0).fillRect(2, 0, 12, 14).fillStyle(0x251d2a).fillRect(3, 14, 5, 4).fillRect(9, 14, 5, 4);
-  paint.generateTexture("party-step-b", 16, 18).clear();
-  if (!scene.anims.exists("party-walk")) scene.anims.create({ key: "party-walk", frames: [{ key: "party-step-a" }, { key: "party-step-b" }], frameRate: 6, repeat: -1 });
+  const createParty = (role: "fighter" | "mage" | "support", body: number, accent: number) => {
+    paint.fillStyle(0xf4deb0).fillRect(4, 1, 8, 7).fillStyle(body).fillRect(2, 8, 12, 7).fillStyle(accent).fillRect(1, 15, 5, 3).fillRect(10, 15, 5, 3);
+    if (role === "fighter") paint.fillStyle(0xc95b4f).fillRect(1, 7, 14, 3);
+    if (role === "mage") paint.fillStyle(0x7561c7).fillTriangle(1, 7, 8, 0, 15, 7);
+    if (role === "support") paint.fillStyle(0x58a98a).fillRect(0, 10, 2, 7).fillRect(14, 10, 2, 7);
+    paint.generateTexture(`${role}-step-a`, 16, 18).clear();
+    paint.fillStyle(0xf4deb0).fillRect(4, 1, 8, 7).fillStyle(body).fillRect(2, 8, 12, 7).fillStyle(accent).fillRect(3, 15, 5, 3).fillRect(8, 15, 5, 3);
+    if (role === "fighter") paint.fillStyle(0xc95b4f).fillRect(1, 7, 14, 3);
+    if (role === "mage") paint.fillStyle(0x7561c7).fillTriangle(1, 7, 8, 0, 15, 7);
+    if (role === "support") paint.fillStyle(0x58a98a).fillRect(0, 10, 2, 7).fillRect(14, 10, 2, 7);
+    paint.generateTexture(`${role}-step-b`, 16, 18).clear();
+    if (!scene.anims.exists(`${role}-walk`)) scene.anims.create({ key: `${role}-walk`, frames: [{ key: `${role}-step-a` }, { key: `${role}-step-b` }], frameRate: 6, repeat: -1 });
+  };
+  createParty("fighter", 0x7c3e38, 0x251d2a);
+  createParty("mage", 0x514274, 0x251d2a);
+  createParty("support", 0x376b5a, 0x251d2a);
   paint.fillStyle(0x355548).fillRect(0, 0, 32, 32).fillStyle(0x2d493f).fillRect(2, 2, 28, 28);
   paint.generateTexture("grass", 32, 32).clear();
   paint.fillStyle(0x253147).fillRect(0, 0, 32, 32).fillStyle(0x172337).fillRect(2, 2, 28, 28);

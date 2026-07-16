@@ -126,10 +126,10 @@ export class OverworldScene extends Phaser.Scene {
     for (let x = 928; x <= 1216; x += 32) walls.create(x, 544, "wall");
 
     const current = this.expedition.region.currentLocationId;
-    this.player = this.physics.add.sprite(128, WORLD_HEIGHT - 128, "party-step-a").setDepth(5).play("party-walk");
+    this.player = this.physics.add.sprite(128, WORLD_HEIGHT - 128, "fighter-step-a").setDepth(5).play("fighter-walk");
     this.player.setCollideWorldBounds(true).setSize(12, 12).setOffset(2, 6);
     this.physics.add.collider(this.player, walls);
-    this.followers = this.expedition.party.slice(1).map((member, index) => this.add.sprite(104 - index * 18, WORLD_HEIGHT - 120, "party-step-a").setTint(index === 0 ? 0x9fd6ff : 0xdca5e8).setDepth(4).play("party-walk"));
+    this.followers = this.expedition.party.slice(1).map((member, index) => this.add.sprite(104 - index * 18, WORLD_HEIGHT - 120, `${member.role}-step-a`).setDepth(4).play(`${member.role}-walk`));
     this.add.text(12, 54, this.expedition.party.map((member) => `${member.name} ${member.health}/${member.maxHealth}`).join("  "), { fontFamily: "monospace", fontSize: "10px", color: "#f4deb0" }).setScrollFactor(0).setDepth(20);
 
     const visible = this.expedition.region.locations.filter((location) => location.revealed || location.id === current);
