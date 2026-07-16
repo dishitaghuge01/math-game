@@ -79,3 +79,7 @@ _Avoid_: vanguard, weaver, striker
 **Ability Grammar**:
 The finite, balanced set of combat effects used to construct Signature Abilities. It permits damage, shields, healing, buffs, debuffs, and turn manipulation.
 _Avoid_: random abilities, freeform spells
+
+**Camp**:
+The most recently reached recovery point in a Region. Defeated parties return here, while their prior decisions and development persist and the Region Map changes.
+_Avoid_: checkpoint, respawn point
