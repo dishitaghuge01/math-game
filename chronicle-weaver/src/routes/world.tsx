@@ -1,8 +1,10 @@
+import { lazy, Suspense } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Compass, Flame, MapPin, Shield, Sparkles, Swords } from "lucide-react";
 import { fetchExpeditionCode, importExpeditionCode, postExpeditionAction, startExpedition, type ExpeditionState } from "@/api/gameApi";
-import { ExpeditionGame } from "@/game/ExpeditionGame";
+
+const ExpeditionGame = lazy(() => import("@/game/ExpeditionGame").then((module) => ({ default: module.ExpeditionGame })));
 
 export const Route = createFileRoute("/world")({ component: RegionMapPage });
 
@@ -57,7 +59,9 @@ function RegionMapPage() {
         {state.region.rivalAdvanced && <p className="font-hand italic text-[color:var(--color-blood)]">A rival has advanced through the fog while the Party recovered.</p>}
       </header>
       <section className="mt-8">
-        <ExpeditionGame expedition={state} onAction={(action) => travel.mutate(action)} />
+        <Suspense fallback={<div className="h-[432px] grid place-items-center parchment-card font-hand italic">Preparing the Expedition…</div>}>
+          <ExpeditionGame expedition={state} onAction={(action) => travel.mutate(action)} />
+        </Suspense>
       </section>
       {state.combat?.status === "active" && (
         <CombatPanel
