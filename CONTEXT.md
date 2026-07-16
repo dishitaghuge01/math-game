@@ -27,3 +27,7 @@ _Avoid_: game state, save data
 **Encounter**:
 A bounded tactical challenge triggered by exploration, such as a battle, discovery, hazard, or social confrontation.
 _Avoid_: event
+
+**Expedition Cycle**:
+The repeating player loop of exploration, Encounter resolution, resource change, and an expedition-defining choice that reshapes later content.
+_Avoid_: gameplay loop

@@ -8,10 +8,10 @@
 - An **Expedition** is shaped by the player’s accumulated **Choice Vector**.
 - Mathematical **Generation Rules** deterministically generate the world, assets, encounters, and campaign structure from the Choice Vector and World Seed.
 - Generated narrative describes established game facts; it does not independently invent canonical world state.
+- The core loop is: explore the generated overworld → encounter a combat, discovery, or social challenge → resolve it → gain or lose resources → make expedition-defining choices → encounter a world reshaped by the Choice Vector.
 
 ## Open decisions
 
-- Core player loop
 - Combat model and party model
 - Exploration scale and movement model
 - Choice Vector dimensions and how players perceive them
