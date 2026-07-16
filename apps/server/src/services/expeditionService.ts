@@ -9,6 +9,7 @@ export interface RegionLocation {
   type: 'camp' | 'combat' | 'discovery' | 'social' | 'landmark';
   connectedTo: string[];
   revealed: boolean;
+  detail?: string;
 }
 
 export type ExpeditionAction =
@@ -276,8 +277,11 @@ function createRegion(seed: number): ExpeditionState['region'] {
     { name: 'Hearth of Reeds', type: 'camp' }, { name: 'Gloam Bridge', type: 'combat' }, { name: 'The Listening Well', type: 'discovery' },
     { name: 'Pilgrim Lanterns', type: 'social' }, { name: 'The Splintered Observatory', type: 'discovery' }, { name: 'Rookery of Ash', type: 'combat' }, { name: 'Moorheart Gate', type: 'combat' },
   ];
+  const discoveryDetails = ['The water reflects a road that does not yet exist.', 'Reeds spell a warning in a script only the Mage can read.', 'A buried bell answers the Party before anyone touches it.'];
+  const socialDetails = ['The distant lanterns split the Party. Who carries the burden?', 'A pilgrim offers shelter, but asks the Party to leave a promise behind.', 'A rival scout waits beside the road with an offer no one trusts.'];
   const locations = templates.map((template, index) => ({
     ...template,
+    detail: template.type === 'discovery' ? discoveryDetails[seededIndex(seed, index, discoveryDetails.length)] : template.type === 'social' ? socialDetails[seededIndex(seed, index, socialDetails.length)] : undefined,
     id: `moor-${seed}-${index}`,
     connectedTo: [] as string[],
     revealed: index === 0 || index === 1,

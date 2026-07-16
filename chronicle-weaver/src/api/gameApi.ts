@@ -82,6 +82,7 @@ export interface ExpeditionState {
       type: "camp" | "combat" | "discovery" | "social" | "landmark";
       connectedTo: string[];
       revealed: boolean;
+      detail?: string;
     }>;
   };
 }

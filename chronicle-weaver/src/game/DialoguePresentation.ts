@@ -12,11 +12,9 @@ export function openEncounterDialogue(scene: Phaser.Scene, expedition: Expeditio
   const social = current.type === "social";
   const speaker = social ? expedition.party[2] : expedition.party[1];
   const title = social ? "PILGRIM LANTERNS" : current.name.toUpperCase();
-  const line = social
-    ? "The distant lanterns split the Party.\nWho carries the burden?"
-    : current.name === "The Splintered Observatory"
-      ? "The broken lens shows two futures.\nWhich road will the Party keep?"
-      : "The water reflects a road that does not yet exist.\nWhat will the Party do?";
+  const line = current.name === "The Splintered Observatory"
+    ? "The broken lens shows two futures.\nWhich road will the Party keep?"
+    : `${current.detail ?? (social ? "The Party reaches an uneasy crossroads." : "Something waits beneath the fog.")}\nWhat will the Party do?`;
   const choices: Array<[string, ExpeditionAction]> = social
     ? [["1. SHARE THE BURDEN", { type: "social", choice: "share" }], ["2. COMMAND THE PATH", { type: "social", choice: "command" }]]
     : [["1. SEARCH THE DEPTHS", { type: "discovery", choice: "search" }], ["2. PRESS INTO THE FOG", { type: "discovery", choice: "press-on" }]];
