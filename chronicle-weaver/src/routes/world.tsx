@@ -62,6 +62,7 @@ function RegionMapPage() {
         <Suspense fallback={<div className="h-[432px] grid place-items-center parchment-card font-hand italic">Preparing the Expedition…</div>}>
           <ExpeditionGame expedition={state} onAction={(action) => travel.mutate(action)} />
         </Suspense>
+        {travel.isError && <p role="alert" className="mt-3 text-center font-hand italic text-[color:var(--color-blood)]">{travel.error.message}</p>}
       </section>
       {state.combat?.status === "active" && (
         <CombatPanel
