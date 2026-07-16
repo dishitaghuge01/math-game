@@ -118,7 +118,13 @@ class OverworldScene extends Phaser.Scene {
   }
 
   private drawMap() {
-    for (let x = 0; x < WORLD_WIDTH; x += 32) for (let y = 0; y < WORLD_HEIGHT; y += 32) this.add.image(x + 16, y + 16, "grass");
+    const terrainPalette = this.expedition.worldSeed % 3 === 0 ? [0x263f52, 0x31546b] : this.expedition.worldSeed % 3 === 1 ? [0x355548, 0x2d493f] : [0x4c4834, 0x635d42];
+    for (let x = 0; x < WORLD_WIDTH; x += 32) for (let y = 0; y < WORLD_HEIGHT; y += 32) {
+      const roll = seededTerrain(this.expedition.worldSeed, x, y);
+      this.add.rectangle(x + 16, y + 16, 32, 32, terrainPalette[roll % terrainPalette.length]);
+      if (roll % 19 === 0) this.add.rectangle(x + 16, y + 16, 5, 9, 0x8ba36d, 0.7);
+      if (roll % 41 === 0) this.add.circle(x + 16, y + 16, 4, 0xb5a57d, 0.75);
+    }
     const walls = this.physics.add.staticGroup();
     for (let x = 16; x < WORLD_WIDTH; x += 32) {
       walls.create(x, 16, "wall");
@@ -145,7 +151,8 @@ class OverworldScene extends Phaser.Scene {
       const [x, y] = positions[index] ?? [180 + index * 80, 180];
       const color = location.type === "combat" ? 0xa84949 : location.type === "camp" ? 0xdd9c49 : location.type === "discovery" ? 0x5596a3 : location.type === "social" ? 0x668e75 : 0x8d659f;
       const marker = this.add.container(x, y).setDepth(4);
-      marker.add([this.add.rectangle(0, 18, 46, 9, 0x182333, 0.6), this.add.rectangle(0, 0, 30, 34, color).setStrokeStyle(3, 0x201b27), this.add.text(0, 28, location.name, { fontFamily: "monospace", fontSize: "10px", color: "#f4deb0", align: "center", wordWrap: { width: 110 } }).setOrigin(0.5, 0)]);
+      const landmarkRoll = seededTerrain(this.expedition.worldSeed, x, y);
+      marker.add([this.add.rectangle(0, 18, 46, 9, 0x182333, 0.6), this.add.rectangle(0, 0, 30, 34, color).setStrokeStyle(3, 0x201b27), this.add.circle(-22, 3, 6 + landmarkRoll % 5, 0x27392e), this.add.circle(22, 5, 5 + landmarkRoll % 4, 0x27392e), this.add.text(0, 28, location.name, { fontFamily: "monospace", fontSize: "10px", color: "#f4deb0", align: "center", wordWrap: { width: 110 } }).setOrigin(0.5, 0)]);
       if (location.id === current) marker.add(this.add.text(0, -28, "CAMP", { fontFamily: "monospace", fontSize: "10px", color: "#ffffff" }).setOrigin(0.5));
       this.landmarks.push({ id: location.id, marker });
     });
@@ -277,4 +284,10 @@ class OverworldScene extends Phaser.Scene {
     this.input.keyboard!.once("keydown-ENTER", close);
     overlay.add(continueButton);
   }
+}
+
+function seededTerrain(seed: number, x: number, y: number): number {
+  let value = (seed ^ Math.imul(x + 1, 374761393) ^ Math.imul(y + 1, 668265263)) >>> 0;
+  value = Math.imul(value ^ (value >>> 13), 1274126177) >>> 0;
+  return value ^ (value >>> 16);
 }
