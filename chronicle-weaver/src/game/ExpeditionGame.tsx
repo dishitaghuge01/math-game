@@ -2,6 +2,7 @@ import Phaser from "phaser";
 import { useEffect, useRef } from "react";
 import type { ExpeditionState } from "@/api/gameApi";
 import { openBattlePresentation } from "./BattlePresentation";
+import { DodgePhase } from "./DodgePhase";
 import { openCampPresentation, openEndingPresentation } from "./ConclusionPresentation";
 import { openEncounterDialogue } from "./DialoguePresentation";
 import type { ExpeditionAction, ExpeditionGameProps } from "./types";
@@ -59,11 +60,7 @@ class OverworldScene extends Phaser.Scene {
   private prompt!: Phaser.GameObjects.Text;
   private landmarks: Array<{ id: string; marker: Phaser.GameObjects.Container }> = [];
   private battleOpen = false;
-  private dodgeAction: ExpeditionAction | null = null;
-  private soul?: Phaser.GameObjects.Rectangle;
-  private bullets?: Phaser.GameObjects.Group;
-  private dodgeHits = 0;
-  private invulnerableUntil = 0;
+  private dodge!: DodgePhase;
   private actionSelecting = false;
 
   constructor(expedition: ExpeditionState, submit: ExpeditionGameProps["onAction"]) {
@@ -85,6 +82,7 @@ class OverworldScene extends Phaser.Scene {
     this.drawMap();
     this.keys = this.input.keyboard!.createCursorKeys();
     this.interact = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.E);
+    this.dodge = new DodgePhase(this, this.keys, this.submit);
     this.cameras.main.setBounds(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
     this.cameras.main.startFollow(this.player, true, 0.12, 0.12);
     this.cameras.main.setZoom(1.2);
@@ -97,8 +95,8 @@ class OverworldScene extends Phaser.Scene {
   }
 
   update() {
-    if (this.dodgeAction) {
-      this.updateDodge();
+    if (this.dodge.active) {
+      this.dodge.update();
       return;
     }
     if (this.battleOpen) return;
@@ -204,68 +202,8 @@ class OverworldScene extends Phaser.Scene {
   }
 
   private beginDodgePhase(action: ExpeditionAction) {
-    this.dodgeAction = action;
     this.actionSelecting = false;
-    this.dodgeHits = 0;
-    this.invulnerableUntil = 0;
-    this.children.getAll().filter((child) => child.depth === 30).forEach((child) => child.destroy());
-    const arena = this.add.rectangle(VIEW_WIDTH / 2, VIEW_HEIGHT / 2, 350, 180, 0x11101a).setStrokeStyle(4, 0xf4deb0).setDepth(31).setScrollFactor(0);
-    this.add.text(VIEW_WIDTH / 2, 120, "DODGE THE FOG", { fontFamily: "monospace", fontSize: "16px", color: "#f4deb0" }).setOrigin(0.5).setDepth(32).setScrollFactor(0);
-    this.soul = this.add.rectangle(VIEW_WIDTH / 2, VIEW_HEIGHT / 2, 12, 12, 0xff4f6d).setDepth(32).setScrollFactor(0);
-    this.bullets = this.add.group();
-    const pattern = this.expedition.worldSeed % 3;
-    const spawn = this.time.addEvent({ delay: pattern === 2 ? 180 : 260, repeat: pattern === 1 ? 16 : 11, callback: () => this.spawnEnemyProjectile(pattern) });
-    this.time.delayedCall(3300, () => {
-      spawn.remove(false);
-      this.bullets?.clear(true, true);
-      arena.destroy();
-      this.soul?.destroy();
-      const resolvedAction = this.dodgeAction?.type === "combat"
-        ? { ...this.dodgeAction, dodgeHits: this.dodgeHits }
-        : this.dodgeAction!;
-      this.submit(resolvedAction);
-      this.dodgeAction = null;
-    });
-  }
-
-  private spawnEnemyProjectile(pattern: number) {
-    if (!this.bullets) return;
-    const bullet = this.add.rectangle(0, 0, 9, 9, 0xe8e4da).setDepth(32).setScrollFactor(0);
-    if (pattern === 0) {
-      bullet.setPosition(Phaser.Math.Between(250, 518), 162).setData("vy", Phaser.Math.Between(85, 140));
-    } else if (pattern === 1) {
-      const fromLeft = this.bullets.getLength() % 2 === 0;
-      bullet.setPosition(fromLeft ? 222 : 546, Phaser.Math.Between(165, 280)).setData("vx", fromLeft ? 150 : -150).setData("vy", 0);
-    } else {
-      const angle = this.bullets.getLength() * 0.9;
-      bullet.setPosition(384 + Math.cos(angle) * 145, 216 + Math.sin(angle) * 65).setData("vx", -Math.cos(angle) * 75).setData("vy", -Math.sin(angle) * 75);
-    }
-    this.bullets.add(bullet);
-  }
-
-  private updateDodge() {
-    if (!this.soul || !this.bullets) return;
-    const speed = 3.2;
-    if (this.keys.left.isDown) this.soul.x = Phaser.Math.Clamp(this.soul.x - speed, 222, 546);
-    if (this.keys.right.isDown) this.soul.x = Phaser.Math.Clamp(this.soul.x + speed, 222, 546);
-    if (this.keys.up.isDown) this.soul.y = Phaser.Math.Clamp(this.soul.y - speed, 148, 284);
-    if (this.keys.down.isDown) this.soul.y = Phaser.Math.Clamp(this.soul.y + speed, 148, 284);
-    this.bullets.getChildren().forEach((bullet) => {
-      const projectile = bullet as Phaser.GameObjects.Rectangle;
-      projectile.x += (projectile.getData("vx") ?? 0) * (1 / 60);
-      projectile.y += (projectile.getData("vy") ?? projectile.getData("speed")) * (1 / 60);
-      if (projectile.y > 302 || projectile.x < 208 || projectile.x > 560) projectile.destroy();
-      if (Phaser.Geom.Intersects.RectangleToRectangle(this.soul!.getBounds(), projectile.getBounds())) {
-        if (this.time.now >= this.invulnerableUntil) {
-          this.dodgeHits += 1;
-          this.invulnerableUntil = this.time.now + 450;
-          this.soul!.setFillStyle(0xffffff);
-          this.time.delayedCall(120, () => this.soul?.setFillStyle(0xff4f6d));
-          this.cameras.main.shake(80, 0.008);
-        }
-        projectile.destroy();
-      }
-    });
+    this.dodge.begin(action, this.expedition.worldSeed);
   }
 
   private openCombatOutcome() {
