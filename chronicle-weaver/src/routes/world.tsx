@@ -53,6 +53,7 @@ function RegionMapPage() {
         <p className="font-hand italic text-[color:var(--color-ink-soft)]">Region I</p>
         <h1 className="font-display text-4xl sm:text-5xl">{state.region.name}</h1>
         <p className="font-hand italic mt-2">The party rests at {current.name}.</p>
+        {state.region.rivalAdvanced && <p className="font-hand italic text-[color:var(--color-blood)]">A rival has advanced through the fog while the Party recovered.</p>}
       </header>
       <section className="parchment-card mt-8 p-5 sm:p-8">
         <div className="grid gap-3">

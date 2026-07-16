@@ -30,10 +30,10 @@ These tracer-bullet tickets build the complete one-Region prologue specified in 
 
 **Blocked by:** Start a seeded Expedition.
 
-- [ ] A player can take turns with all three Party members against a generated enemy Encounter.
-- [ ] Each role exposes a basic action, defensive/support action, and generated Signature Abilities made only from Ability Grammar effects.
-- [ ] Combat produces clear victory, defeat, resource, and Party-condition outcomes.
-- [ ] A fixed Expedition and action sequence resolve to the same combat state and rewards.
+- [x] A player can take turns with all three Party members against a generated enemy Encounter.
+- [x] Each role exposes a basic action, defensive/support action, and generated Signature Abilities made only from Ability Grammar effects.
+- [x] Combat produces clear victory, defeat, resource, and Party-condition outcomes.
+- [x] A fixed Expedition and action sequence resolve to the same combat state and rewards.
 
 ## Resolve Discovery and Social Encounters
 
@@ -52,10 +52,10 @@ These tracer-bullet tickets build the complete one-Region prologue specified in 
 
 **Blocked by:** Travel an illustrated Region Map; Resolve three-member Combat Encounters.
 
-- [ ] A Party defeat returns the Expedition to the latest reached Camp instead of deleting or restarting it.
-- [ ] The recovery applies a visible consumable/resource consequence while preserving resolved choices and Party development.
-- [ ] Recovery deterministically changes the Region through a route closure, rival advance, or new opportunity.
-- [ ] The changed Region remains stable after saving and resuming the Expedition.
+- [x] A Party defeat returns the Expedition to the latest reached Camp instead of deleting or restarting it.
+- [x] The recovery applies a visible consumable/resource consequence while preserving resolved choices and Party development.
+- [x] Recovery deterministically changes the Region through a route closure, rival advance, or new opportunity.
+- [x] The changed Region remains stable after saving and resuming the Expedition.
 
 ## Complete the one-Region prologue
 

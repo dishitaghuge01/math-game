@@ -73,6 +73,7 @@ export interface ExpeditionState {
   region: {
     name: string;
     currentLocationId: string;
+    rivalAdvanced: boolean;
     locations: Array<{
       id: string;
       name: string;

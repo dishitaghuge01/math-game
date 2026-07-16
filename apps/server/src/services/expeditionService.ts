@@ -18,12 +18,17 @@ export type ExpeditionAction =
   | { type: 'discovery'; choice: 'search' | 'press-on' }
   | { type: 'social'; choice: 'share' | 'command' };
 
+export interface SignatureAbility {
+  name: string;
+  effects: Array<'damage' | 'shield' | 'healing' | 'buff' | 'debuff' | 'turn-manipulation'>;
+}
+
 export interface ExpeditionState {
   expeditionId: string;
   worldSeed: number;
-  party: Array<{ role: PartyRole; name: string; motive: string; portrait: string; health: number; maxHealth: number; abilities: string[]; bond: number }>;
+  party: Array<{ role: PartyRole; name: string; motive: string; portrait: string; health: number; maxHealth: number; abilities: string[]; signatureAbility: SignatureAbility; bond: number }>;
   traits: Record<'mercy' | 'resolve' | 'curiosity' | 'defiance' | 'kinship', { tier: string; recentShift: string }>;
-  region: { name: string; currentLocationId: string; campLocationId: string; locations: RegionLocation[] };
+  region: { name: string; currentLocationId: string; campLocationId: string; rivalAdvanced: boolean; locations: RegionLocation[] };
   combat: { status: 'active' | 'victory' | 'defeat'; enemy: { name: string; health: number; maxHealth: number }; activeMemberRole: PartyRole; log: string[] } | null;
   resources: { gold: number; experience: number; potions: number };
   majorDecisionResolved: boolean;
@@ -139,6 +144,7 @@ export function retreatToCamp(expeditionId: string): ExpeditionState {
   state.region.currentLocationId = state.region.campLocationId;
   state.resources.gold = Math.max(0, state.resources.gold - 2);
   state.resources.potions = Math.max(0, state.resources.potions - 1);
+  state.region.rivalAdvanced = true;
   const blocked = state.region.locations.find((location) => location.type === 'landmark');
   if (blocked) blocked.revealed = false;
   recoverPartyAtCamp(state);
@@ -152,9 +158,10 @@ export function resolveCombatAction(expeditionId: string, action: 'basic' | 'gua
   if (!state) throw Object.assign(new Error('Expedition not found'), { status: 404 });
   if (!state.combat || state.combat.status !== 'active') throw Object.assign(new Error('No active Combat Encounter'), { status: 400 });
   const actingRole = state.combat.activeMemberRole;
+  const actor = state.party.find((member) => member.role === actingRole)!;
   const signatureDamage: Record<PartyRole, number> = { fighter: 6, mage: 8, support: 4 };
-  const damage = action === 'signature' ? signatureDamage[actingRole] : action === 'basic' ? 4 : 1;
-  if (actingRole === 'support' && action === 'signature') {
+  const damage = action === 'signature' && actor.signatureAbility.effects.includes('damage') ? signatureDamage[actingRole] : action === 'basic' ? 4 : 1;
+  if (action === 'signature' && actor.signatureAbility.effects.includes('healing')) {
     const wounded = state.party.find((member) => member.health < member.maxHealth);
     if (wounded) wounded.health = Math.min(wounded.maxHealth, wounded.health + 5);
   }
@@ -181,6 +188,7 @@ export function resolveCombatAction(expeditionId: string, action: 'basic' | 'gua
       state.combat.log.push('The Party falls and returns to Camp.');
       state.region.currentLocationId = state.region.campLocationId;
       state.resources.potions = Math.max(0, state.resources.potions - 1);
+      state.region.rivalAdvanced = true;
       recoverPartyAtCamp(state);
     }
     const roles: PartyRole[] = ['fighter', 'mage', 'support'];
@@ -263,7 +271,7 @@ function createRegion(seed: number): ExpeditionState['region'] {
     locations[index].connectedTo.push(locations[index + 1].id);
     locations[index + 1].connectedTo.push(locations[index].id);
   }
-  return { name: 'The Fogbound Moor', currentLocationId: locations[0].id, campLocationId: locations[0].id, locations };
+  return { name: 'The Fogbound Moor', currentLocationId: locations[0].id, campLocationId: locations[0].id, rivalAdvanced: false, locations };
 }
 
 function recoverPartyAtCamp(state: ExpeditionState): void {
@@ -283,7 +291,11 @@ function createPartyMember(role: PartyRole, seed: number, index: number) {
   const motive = motives[role][seededIndex(seed, index + 7, motives[role].length)];
   const maxHealth = role === 'fighter' ? 24 : role === 'mage' ? 16 : 20;
   const abilityStem = names[role][seededIndex(seed, index + 19, names[role].length)];
-  return { role, name, motive, portrait: `${role}-sigil-${seededIndex(seed, index + 13, 9)}`, health: maxHealth, maxHealth, bond: 0, abilities: [`${abilityStem}'s strike`, `${abilityStem}'s guard`, `${abilityStem}'s signature`] };
+  const effects: Record<PartyRole, SignatureAbility['effects']> = {
+    fighter: ['damage', 'shield'], mage: ['damage', 'debuff'], support: ['damage', 'healing', 'buff'],
+  };
+  const signatureAbility = { name: `${abilityStem}'s signature`, effects: effects[role] };
+  return { role, name, motive, portrait: `${role}-sigil-${seededIndex(seed, index + 13, 9)}`, health: maxHealth, maxHealth, bond: 0, abilities: [`${abilityStem}'s strike`, `${abilityStem}'s guard`, signatureAbility.name], signatureAbility };
 }
 
 function seededIndex(seed: number, offset: number, length: number): number {

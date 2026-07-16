@@ -103,6 +103,20 @@ describe('Expedition API', () => {
     expect(state.resources).toEqual({ gold: 5, experience: 10, potions: 2 });
   });
 
+  it('recovers a defeated Party at Camp and persists the deterministic rival advance', async () => {
+    const expeditionId = `recovery-test-${Date.now()}`;
+    const started = await fetch(`${baseUrl}/expeditions`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ expeditionId, worldSeed: 8080 }) });
+    const state = await started.json() as { region: { locations: Array<{ id: string; type: string }> } };
+    const combat = state.region.locations.find((location) => location.type === 'combat')!;
+    await fetch(`${baseUrl}/expeditions/${expeditionId}/actions`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'travel', destinationId: combat.id }) });
+    const retreated = await fetch(`${baseUrl}/expeditions/${expeditionId}/actions`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'retreat' }) });
+    const recovered = await retreated.json() as { party: Array<{ health: number; maxHealth: number }>; resources: { potions: number }; region: { rivalAdvanced: boolean } };
+    expect(recovered.party.every((member) => member.health === member.maxHealth)).toBe(true);
+    expect(recovered.resources.potions).toBe(1);
+    expect(recovered.region.rivalAdvanced).toBe(true);
+    expect(await (await fetch(`${baseUrl}/expeditions/${expeditionId}`)).json()).toMatchObject({ region: { rivalAdvanced: true } });
+  });
+
   it('requires the major decision before resolving the final Encounter into a trait-shaped ending', async () => {
     const expeditionId = `prologue-test-${Date.now()}`;
     const started = await fetch(`${baseUrl}/expeditions`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ expeditionId, worldSeed: 5150 }) });
