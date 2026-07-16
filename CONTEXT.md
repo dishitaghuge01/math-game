@@ -35,3 +35,7 @@ _Avoid_: gameplay loop
 **Expedition Party**:
 The group of up to three playable characters travelling through an Expedition. Each character has a distinct personality and a development arc shaped by the player’s decisions and use of that character.
 _Avoid_: roster, squad
+
+**Signature Ability**:
+A character-specific combat action generated for an Expedition Party member. Its availability and effects express that character’s personality and development.
+_Avoid_: skill, spell
