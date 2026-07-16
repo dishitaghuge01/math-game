@@ -43,3 +43,7 @@ _Avoid_: skill, spell
 **Region Map**:
 An illustrated network of generated, connected locations that the Expedition Party can reach. Choosing a location advances travel and produces an Encounter or discovery.
 _Avoid_: overworld, free-roam map
+
+**Expedition Trait**:
+A player-facing, named interpretation of the hidden Choice Vector. It communicates a direction and recent change without exposing raw values or equations.
+_Avoid_: stat, alignment meter

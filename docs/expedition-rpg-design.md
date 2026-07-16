@@ -12,9 +12,11 @@
 - An Expedition has up to three active, playable characters. Their distinct personalities, relationships, and character development are shaped by the player’s decisions and by how the player uses each character in play.
 - Combat is turn-based with all three party members active. Each character has a basic attack, a defensive or support action, and 2–3 generated signature abilities. Character relationships and temperaments affect combat; a tactics grid and timing mechanics are deferred.
 - Exploration uses an illustrated, procedurally generated region map. Players choose between connected reachable locations—such as ruins, camps, settlements, hazards, and landmarks—and travel produces an Encounter or discovery. Direct free-roaming movement is out of scope.
+- Players see the Choice Vector as named Expedition Traits with descriptive tiers and recent shifts; raw values and equations remain hidden.
 
 ## Open decisions
 
+- Campaign structure and ending conditions
 - Choice Vector dimensions and how players perceive them
 - Campaign structure and ending conditions
 - Procedural asset style and production pipeline
