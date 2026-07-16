@@ -143,6 +143,12 @@ export function resolveCombatAction(expeditionId: string, action: 'basic' | 'gua
     const incomingDamage = action === 'guard' ? 1 : 3;
     target.health = Math.max(0, target.health - incomingDamage);
     state.combat.log.push(`${state.combat.enemy.name} strikes ${target.name} for ${incomingDamage}.`);
+    if (state.party.every((member) => member.health === 0)) {
+      state.combat.status = 'defeat';
+      state.combat.log.push('The Party falls and returns to Camp.');
+      state.region.currentLocationId = state.region.campLocationId;
+      state.resources.potions = Math.max(0, state.resources.potions - 1);
+    }
     const roles: PartyRole[] = ['fighter', 'mage', 'support'];
     state.combat.activeMemberRole = roles[(roles.indexOf(actingRole) + 1) % roles.length];
   }
