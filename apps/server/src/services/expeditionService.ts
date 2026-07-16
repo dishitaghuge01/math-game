@@ -14,7 +14,7 @@ export interface RegionLocation {
 export interface ExpeditionState {
   expeditionId: string;
   worldSeed: number;
-  party: Array<{ role: PartyRole; name: string; motive: string; portrait: string }>;
+  party: Array<{ role: PartyRole; name: string; motive: string; portrait: string; health: number; maxHealth: number; abilities: string[] }>;
   traits: Record<'mercy' | 'resolve' | 'curiosity' | 'defiance' | 'kinship', { tier: string; recentShift: string }>;
   region: { name: string; currentLocationId: string; locations: RegionLocation[] };
   combat: { status: 'active' | 'victory' | 'defeat'; enemy: { name: string; health: number; maxHealth: number }; activeMemberRole: PartyRole; log: string[] } | null;
@@ -78,15 +78,20 @@ export function resolveCombatAction(expeditionId: string, action: 'basic' | 'gua
   const state = loadExpedition(expeditionId);
   if (!state) throw Object.assign(new Error('Expedition not found'), { status: 404 });
   if (!state.combat || state.combat.status !== 'active') throw Object.assign(new Error('No active Combat Encounter'), { status: 400 });
+  const actingRole = state.combat.activeMemberRole;
   const damage = action === 'signature' ? 7 : action === 'basic' ? 4 : 1;
   state.combat.enemy.health = Math.max(0, state.combat.enemy.health - damage);
-  state.combat.log.push(`${state.combat.activeMemberRole} uses ${action} for ${damage} damage.`);
+  state.combat.log.push(`${actingRole} uses ${action} for ${damage} damage.`);
   if (state.combat.enemy.health === 0) {
     state.combat.status = 'victory';
     state.combat.log.push('The road is clear.');
   } else {
+    const target = state.party.find((member) => member.role === actingRole)!;
+    const incomingDamage = action === 'guard' ? 1 : 3;
+    target.health = Math.max(0, target.health - incomingDamage);
+    state.combat.log.push(`${state.combat.enemy.name} strikes ${target.name} for ${incomingDamage}.`);
     const roles: PartyRole[] = ['fighter', 'mage', 'support'];
-    state.combat.activeMemberRole = roles[(roles.indexOf(state.combat.activeMemberRole) + 1) % roles.length];
+    state.combat.activeMemberRole = roles[(roles.indexOf(actingRole) + 1) % roles.length];
   }
   saveExpedition(state);
   return state;
@@ -123,7 +128,9 @@ function createRegion(seed: number): ExpeditionState['region'] {
 function createPartyMember(role: PartyRole, seed: number, index: number) {
   const name = names[role][seededIndex(seed, index, names[role].length)];
   const motive = motives[role][seededIndex(seed, index + 7, motives[role].length)];
-  return { role, name, motive, portrait: `${role}-sigil-${seededIndex(seed, index + 13, 9)}` };
+  const maxHealth = role === 'fighter' ? 24 : role === 'mage' ? 16 : 20;
+  const abilityStem = names[role][seededIndex(seed, index + 19, names[role].length)];
+  return { role, name, motive, portrait: `${role}-sigil-${seededIndex(seed, index + 13, 9)}`, health: maxHealth, maxHealth, abilities: [`${abilityStem}'s strike`, `${abilityStem}'s guard`, `${abilityStem}'s signature`] };
 }
 
 function seededIndex(seed: number, offset: number, length: number): number {

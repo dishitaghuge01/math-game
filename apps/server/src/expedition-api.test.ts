@@ -75,8 +75,11 @@ describe('Expedition API', () => {
 
     const acted = await fetch(`${baseUrl}/expeditions/${expeditionId}/actions`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'combat', action: 'signature' }) });
     expect(acted.status).toBe(200);
-    const afterAction = await acted.json() as { combat: { enemy: { health: number }; log: string[] } };
+    const afterAction = await acted.json() as { combat: { enemy: { health: number }; log: string[]; activeMemberRole: string }; party: Array<{ role: string; health: number; maxHealth: number; abilities: string[] }> };
     expect(afterAction.combat.enemy.health).toBeLessThan(inCombat.combat.enemy.health);
-    expect(afterAction.combat.log.length).toBeGreaterThan(0);
+    expect(afterAction.combat.activeMemberRole).toBe('mage');
+    expect(afterAction.party.every((member) => member.health <= member.maxHealth && member.abilities.length === 3)).toBe(true);
+    expect(afterAction.party.find((member) => member.role === 'fighter')?.health).toBeLessThan(24);
+    expect(afterAction.combat.log.length).toBeGreaterThan(1);
   });
 });

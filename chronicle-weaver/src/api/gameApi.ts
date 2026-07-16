@@ -53,6 +53,9 @@ export interface ExpeditionState {
     name: string;
     motive: string;
     portrait: string;
+    health: number;
+    maxHealth: number;
+    abilities: string[];
   }>;
   traits: Record<
     "mercy" | "resolve" | "curiosity" | "defiance" | "kinship",
