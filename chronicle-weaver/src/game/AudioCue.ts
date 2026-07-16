@@ -1,10 +1,14 @@
 export type AudioCue = "confirm" | "dialogue" | "hit" | "heal" | "victory";
 
 let context: AudioContext | null = null;
+let muted = false;
+
+export function toggleMuted() { muted = !muted; return muted; }
+export function isMuted() { return muted; }
 
 /** Small original synthesized cues; works without external audio assets. */
 export function playCue(cue: AudioCue) {
-  if (typeof window === "undefined") return;
+  if (muted || typeof window === "undefined") return;
   context ??= new AudioContext();
   if (context.state === "suspended") void context.resume();
   const oscillator = context.createOscillator();

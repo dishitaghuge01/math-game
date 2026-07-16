@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 import type { ExpeditionState } from "@/api/gameApi";
+import { isMuted, toggleMuted } from "./AudioCue";
 import { openBattlePresentation } from "./BattlePresentation";
 import { openCampPresentation, openEndingPresentation } from "./ConclusionPresentation";
 import { DodgePhase } from "./DodgePhase";
@@ -15,6 +16,8 @@ export class OverworldScene extends Phaser.Scene {
   private followers: Phaser.GameObjects.Sprite[] = [];
   private keys!: Phaser.Types.Input.Keyboard.CursorKeys;
   private interact!: Phaser.Input.Keyboard.Key;
+  private soundToggle!: Phaser.Input.Keyboard.Key;
+  private soundStatus!: Phaser.GameObjects.Text;
   private prompt!: Phaser.GameObjects.Text;
   private landmarks: Array<{ id: string; marker: Phaser.GameObjects.Container }> = [];
   private battleOpen = false;
@@ -40,12 +43,14 @@ export class OverworldScene extends Phaser.Scene {
     this.drawMap();
     this.keys = this.input.keyboard!.createCursorKeys();
     this.interact = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.E);
+    this.soundToggle = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.M);
     this.dodge = new DodgePhase(this, this.keys, this.submit);
     this.cameras.main.setBounds(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
     this.cameras.main.startFollow(this.player, true, 0.12, 0.12);
     this.cameras.main.setZoom(1.2);
     this.add.text(12, 10, "FOGBOUND MOOR", { fontFamily: "monospace", fontSize: "16px", color: "#f4deb0" }).setScrollFactor(0).setDepth(20);
-    this.add.text(12, 32, "ARROWS: WALK   E: INTERACT", { fontFamily: "monospace", fontSize: "10px", color: "#b6a37c" }).setScrollFactor(0).setDepth(20);
+    this.add.text(12, 32, "ARROWS: WALK   E: INTERACT   M: SOUND", { fontFamily: "monospace", fontSize: "10px", color: "#b6a37c" }).setScrollFactor(0).setDepth(20);
+    this.soundStatus = this.add.text(700, 10, isMuted() ? "MUTED" : "SOUND", { fontFamily: "monospace", fontSize: "10px", color: "#b6a37c" }).setOrigin(1, 0).setScrollFactor(0).setDepth(20);
     this.prompt = this.add.text(VIEW_WIDTH / 2, VIEW_HEIGHT - 34, "", { fontFamily: "monospace", fontSize: "13px", color: "#ffffff", backgroundColor: "#211b2c", padding: { x: 8, y: 5 } }).setOrigin(0.5).setScrollFactor(0).setDepth(20);
     if (this.expedition.combat?.status === "active") this.openBattle();
     else if (this.expedition.combat?.status === "victory" || this.expedition.combat?.status === "defeat") this.openCombatOutcome();
@@ -53,6 +58,7 @@ export class OverworldScene extends Phaser.Scene {
   }
 
   update() {
+    if (Phaser.Input.Keyboard.JustDown(this.soundToggle)) this.soundStatus.setText(toggleMuted() ? "MUTED" : "SOUND");
     if (this.dodge.active) {
       this.dodge.update();
       return;
