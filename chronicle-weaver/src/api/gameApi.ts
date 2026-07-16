@@ -1,4 +1,4 @@
-import { getOrCreateClientIds } from "./session";
+import { getOrCreateClientIds, resetClientIds } from "./session";
 
 const BASE_URL = (import.meta.env.VITE_SERVER_URL as string | undefined) ?? "http://localhost:4000";
 
@@ -62,6 +62,8 @@ export interface ExpeditionState {
     "mercy" | "resolve" | "curiosity" | "defiance" | "kinship",
     { tier: string; recentShift: string }
   >;
+  majorDecisionResolved: boolean;
+  ending: { title: string; summary: string } | null;
   combat: {
     status: "active" | "victory" | "defeat";
     enemy: { name: string; health: number; maxHealth: number };
@@ -166,6 +168,21 @@ export async function startExpedition(): Promise<ExpeditionState> {
   return request<ExpeditionState>("/expeditions", {
     method: "POST",
     body: JSON.stringify({ expeditionId: sessionId }),
+  });
+}
+
+export async function fetchExpeditionCode(): Promise<string> {
+  const { sessionId } = getOrCreateClientIds();
+  const response = await request<{ code: string }>(`/expeditions/${encodeURIComponent(sessionId)}/code`);
+  return response.code;
+}
+
+export async function importExpeditionCode(code: string): Promise<ExpeditionState> {
+  resetClientIds();
+  const { sessionId } = getOrCreateClientIds();
+  return request<ExpeditionState>("/expeditions/import", {
+    method: "POST",
+    body: JSON.stringify({ expeditionId: sessionId, code }),
   });
 }
 

@@ -41,10 +41,10 @@ These tracer-bullet tickets build the complete one-Region prologue specified in 
 
 **Blocked by:** Start a seeded Expedition; Travel an illustrated Region Map.
 
-- [ ] Reaching a Discovery location presents a meaningful hazard, resource, puzzle, or route decision.
-- [ ] Reaching a Social location presents a Party, NPC, or faction decision grounded in canonical Expedition facts.
-- [ ] Resolutions visibly describe Trait and relationship shifts without exposing raw Choice Vector values.
-- [ ] Later available content changes deterministically after a resolved non-combat choice.
+- [x] Reaching a Discovery location presents a meaningful hazard, resource, puzzle, or route decision.
+- [x] Reaching a Social location presents a Party, NPC, or faction decision grounded in canonical Expedition facts.
+- [x] Resolutions visibly describe Trait and relationship shifts without exposing raw Choice Vector values.
+- [x] Later available content changes deterministically after a resolved non-combat choice.
 
 ## Make defeat recoverable at Camps
 
@@ -63,10 +63,10 @@ These tracer-bullet tickets build the complete one-Region prologue specified in 
 
 **Blocked by:** Resolve three-member Combat Encounters; Resolve Discovery and Social Encounters; Make defeat recoverable at Camps.
 
-- [ ] A generated Region contains approximately 50% Combat, 30% Discovery, and 20% Social Encounters across its playable locations.
-- [ ] Completing the Region’s required path reaches a major decision and final Encounter.
-- [ ] The miniature ending reflects resolved choices, Expedition Traits, and Party relationships.
-- [ ] A full predetermined prologue sequence is testable from Expedition start through ending at the Expedition API seam.
+- [x] A generated Region contains approximately 50% Combat, 30% Discovery, and 20% Social Encounters across its playable locations.
+- [x] Completing the Region’s required path reaches a major decision and final Encounter.
+- [x] The miniature ending reflects resolved choices, Expedition Traits, and Party relationships.
+- [x] A full predetermined prologue sequence is testable from Expedition start through ending at the Expedition API seam.
 
 ## Export, import, and branch Expeditions
 
@@ -74,7 +74,7 @@ These tracer-bullet tickets build the complete one-Region prologue specified in 
 
 **Blocked by:** Complete the one-Region prologue.
 
-- [ ] An Expedition Code contains enough initial seed and compact action history to reproduce canonical Expedition State.
-- [ ] Importing a Code reproduces the same Party, Region, resolved Encounters, resources, and ending for the same action history.
-- [ ] A new action after import creates a valid divergent Expedition outcome without changing the original Code’s replay.
-- [ ] Export/import is accessible in the player-facing UI and covered by deterministic API-level tests.
+- [x] An Expedition Code contains enough initial seed and compact action history to reproduce canonical Expedition State.
+- [x] Importing a Code reproduces the same Party, Region, resolved Encounters, resources, and ending for the same action history.
+- [x] A new action after import creates a valid divergent Expedition outcome without changing the original Code’s replay.
+- [x] Export/import is accessible in the player-facing UI and covered by deterministic API-level tests.

@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Compass, Flame, MapPin, Shield, Sparkles, Swords } from "lucide-react";
-import { postExpeditionAction, startExpedition, type ExpeditionState } from "@/api/gameApi";
+import { fetchExpeditionCode, importExpeditionCode, postExpeditionAction, startExpedition, type ExpeditionState } from "@/api/gameApi";
 
 export const Route = createFileRoute("/world")({ component: RegionMapPage });
 
@@ -21,6 +21,16 @@ function RegionMapPage() {
     mutationFn: postExpeditionAction,
     onSuccess: (state) => queryClient.setQueryData(["expedition"], state),
   });
+  const exportCode = async () => {
+    const code = await fetchExpeditionCode();
+    await navigator.clipboard?.writeText(code);
+    window.prompt("Your Expedition Code (copied when permitted):", code);
+  };
+  const importCode = async () => {
+    const code = window.prompt("Paste an Expedition Code:");
+    if (!code) return;
+    queryClient.setQueryData(["expedition"], await importExpeditionCode(code));
+  };
   if (expedition.isLoading || !expedition.data)
     return (
       <div className="min-h-[60vh] grid place-items-center font-hand italic">
@@ -68,8 +78,8 @@ function RegionMapPage() {
       )}
       {current.type === "discovery" && (
         <ChoicePanel
-          title="The Listening Well"
-          prompt="The water reflects a road that does not yet exist."
+          title={current.name}
+          prompt={current.name === "The Splintered Observatory" ? "Its broken lens offers a choice between the road you know and the road you need." : "The water reflects a road that does not yet exist."}
           choices={[
             ["search", "Search the depths"],
             ["press-on", "Press into the fog"],
@@ -94,10 +104,17 @@ function RegionMapPage() {
           }
         />
       )}
-      <div className="mt-6 flex justify-center">
-        <button onClick={() => navigate({ to: "/" })} className="font-hand italic underline">
-          consult the Expedition Party
-        </button>
+      {state.ending && (
+        <section className="parchment-card mt-6 p-6 text-center border-2 border-[color:var(--color-gold-deep)]">
+          <p className="font-heading uppercase tracking-widest text-xs">Prologue complete</p>
+          <h2 className="font-display text-3xl mt-2">{state.ending.title}</h2>
+          <p className="font-hand italic mt-3">{state.ending.summary}</p>
+        </section>
+      )}
+      <div className="mt-6 flex justify-center gap-4">
+        <button onClick={exportCode} className="font-hand italic underline">export Expedition Code</button>
+        <button onClick={importCode} className="font-hand italic underline">import Expedition Code</button>
+        <button onClick={() => navigate({ to: "/" })} className="font-hand italic underline">consult the Expedition Party</button>
       </div>
     </div>
   );

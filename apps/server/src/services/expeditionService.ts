@@ -26,6 +26,8 @@ export interface ExpeditionState {
   region: { name: string; currentLocationId: string; campLocationId: string; locations: RegionLocation[] };
   combat: { status: 'active' | 'victory' | 'defeat'; enemy: { name: string; health: number; maxHealth: number }; activeMemberRole: PartyRole; log: string[] } | null;
   resources: { gold: number; experience: number; potions: number };
+  majorDecisionResolved: boolean;
+  ending: { title: string; summary: string } | null;
   actionHistory: ExpeditionAction[];
 }
 
@@ -58,6 +60,8 @@ export function startExpedition(expeditionId: string, requestedSeed?: number): E
     region: createRegion(worldSeed),
     combat: null,
     resources: { gold: 0, experience: 0, potions: 2 },
+    majorDecisionResolved: false,
+    ending: null,
     actionHistory: [],
   };
   const now = new Date().toISOString();
@@ -70,6 +74,8 @@ export function travelToLocation(expeditionId: string, destinationId: string): E
   const state = loadExpedition(expeditionId);
   if (!state) throw Object.assign(new Error('Expedition not found'), { status: 404 });
   if (state.combat?.status === 'active') throw Object.assign(new Error('Cannot travel during an active Combat Encounter'), { status: 400 });
+  const currentLocation = state.region.locations.find((location) => location.id === state.region.currentLocationId);
+  if (currentLocation?.type === 'discovery' || currentLocation?.type === 'social') throw Object.assign(new Error('Resolve the current Encounter before travelling'), { status: 400 });
   const origin = state.region.locations.find((location) => location.id === state.region.currentLocationId);
   const destination = state.region.locations.find((location) => location.id === destinationId);
   if (!origin?.connectedTo.includes(destinationId) || !destination) throw Object.assign(new Error('Destination is not reachable'), { status: 400 });
@@ -117,6 +123,7 @@ export function resolveDiscovery(expeditionId: string, choice: 'search' | 'press
   } else {
     state.traits.resolve = { tier: 'steadfast', recentShift: 'rising' };
   }
+  if (location.name === 'The Splintered Observatory') state.majorDecisionResolved = true;
   location.type = 'landmark';
   recordAction(state, { type: 'discovery', choice });
   saveExpedition(state);
@@ -134,6 +141,7 @@ export function retreatToCamp(expeditionId: string): ExpeditionState {
   state.resources.potions = Math.max(0, state.resources.potions - 1);
   const blocked = state.region.locations.find((location) => location.type === 'landmark');
   if (blocked) blocked.revealed = false;
+  recoverPartyAtCamp(state);
   recordAction(state, { type: 'retreat' });
   saveExpedition(state);
   return state;
@@ -159,6 +167,10 @@ export function resolveCombatAction(expeditionId: string, action: 'basic' | 'gua
     const clearedLocation = state.region.locations.find((location) => location.id === state.region.currentLocationId);
     if (clearedLocation) clearedLocation.type = 'landmark';
     state.combat.log.push('The road is clear. The Party claims 5 gold and 10 experience.');
+    if (clearedLocation?.id === state.region.locations.at(-1)?.id && state.majorDecisionResolved) {
+      state.ending = createEnding(state);
+      state.combat.log.push(state.ending.summary);
+    }
   } else {
     const target = state.party.find((member) => member.role === actingRole)!;
     const incomingDamage = action === 'guard' ? 1 : 3;
@@ -169,6 +181,7 @@ export function resolveCombatAction(expeditionId: string, action: 'basic' | 'gua
       state.combat.log.push('The Party falls and returns to Camp.');
       state.region.currentLocationId = state.region.campLocationId;
       state.resources.potions = Math.max(0, state.resources.potions - 1);
+      recoverPartyAtCamp(state);
     }
     const roles: PartyRole[] = ['fighter', 'mage', 'support'];
     state.combat.activeMemberRole = roles[(roles.indexOf(actingRole) + 1) % roles.length];
@@ -238,7 +251,7 @@ function saveExpedition(state: ExpeditionState): void {
 function createRegion(seed: number): ExpeditionState['region'] {
   const templates: Array<Pick<RegionLocation, 'name' | 'type'>> = [
     { name: 'Hearth of Reeds', type: 'camp' }, { name: 'Gloam Bridge', type: 'combat' }, { name: 'The Listening Well', type: 'discovery' },
-    { name: 'Pilgrim Lanterns', type: 'social' }, { name: 'The Splintered Observatory', type: 'landmark' }, { name: 'Moorheart Gate', type: 'combat' },
+    { name: 'Pilgrim Lanterns', type: 'social' }, { name: 'The Splintered Observatory', type: 'discovery' }, { name: 'Rookery of Ash', type: 'combat' }, { name: 'Moorheart Gate', type: 'combat' },
   ];
   const locations = templates.map((template, index) => ({
     ...template,
@@ -251,6 +264,18 @@ function createRegion(seed: number): ExpeditionState['region'] {
     locations[index + 1].connectedTo.push(locations[index].id);
   }
   return { name: 'The Fogbound Moor', currentLocationId: locations[0].id, campLocationId: locations[0].id, locations };
+}
+
+function recoverPartyAtCamp(state: ExpeditionState): void {
+  state.party.forEach((member) => { member.health = member.maxHealth; });
+}
+
+function createEnding(state: ExpeditionState): { title: string; summary: string } {
+  const kinship = state.traits.kinship.tier;
+  const bonds = state.party.reduce((total, member) => total + member.bond, 0);
+  return bonds > 0
+    ? { title: 'A Shared Lantern', summary: `Kinship ${kinship} carries the Party beyond the Moor, their bonds bright against the fog.` }
+    : { title: 'The Road Kept', summary: `Kinship ${kinship} marks a hard-won passage beyond the Moor.` };
 }
 
 function createPartyMember(role: PartyRole, seed: number, index: number) {

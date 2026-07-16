@@ -103,6 +103,19 @@ describe('Expedition API', () => {
     expect(state.resources).toEqual({ gold: 5, experience: 10, potions: 2 });
   });
 
+  it('requires the major decision before resolving the final Encounter into a trait-shaped ending', async () => {
+    const expeditionId = `prologue-test-${Date.now()}`;
+    const started = await fetch(`${baseUrl}/expeditions`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ expeditionId, worldSeed: 5150 }) });
+    let state = await started.json() as { region: { locations: Array<{ id: string; type: string }> }; ending: unknown };
+    const actions = [{ type: 'travel', destinationId: state.region.locations[1].id }, ...Array.from({ length: 3 }, () => ({ type: 'combat', action: 'signature' })), { type: 'travel', destinationId: state.region.locations[2].id }, { type: 'discovery', choice: 'search' }, { type: 'travel', destinationId: state.region.locations[3].id }, { type: 'social', choice: 'share' }, { type: 'travel', destinationId: state.region.locations[4].id }, { type: 'discovery', choice: 'press-on' }, { type: 'travel', destinationId: state.region.locations[5].id }, ...Array.from({ length: 3 }, () => ({ type: 'combat', action: 'signature' })), { type: 'travel', destinationId: state.region.locations[6].id }, ...Array.from({ length: 3 }, () => ({ type: 'combat', action: 'signature' }))];
+    for (const action of actions) {
+      const response = await fetch(`${baseUrl}/expeditions/${expeditionId}/actions`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(action) });
+      expect(response.status).toBe(200);
+      state = await response.json() as typeof state;
+    }
+    expect(state.ending).toMatchObject({ title: expect.any(String), summary: expect.stringContaining('Kinship') });
+  });
+
   it('exports an action history and imports it as an independent deterministic branch', async () => {
     const expeditionId = `code-test-${Date.now()}`;
     const started = await fetch(`${baseUrl}/expeditions`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ expeditionId, worldSeed: 424242 }) });
