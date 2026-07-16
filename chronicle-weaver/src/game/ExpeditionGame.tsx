@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import { useEffect, useRef } from "react";
 import type { ExpeditionState } from "@/api/gameApi";
+import { openBattlePresentation } from "./BattlePresentation";
 import { openCampPresentation, openEndingPresentation } from "./ConclusionPresentation";
 import { openEncounterDialogue } from "./DialoguePresentation";
 import type { ExpeditionAction, ExpeditionGameProps } from "./types";
@@ -186,31 +187,7 @@ class OverworldScene extends Phaser.Scene {
 
   private openBattle() {
     this.battleOpen = true;
-    const enemy = this.expedition.combat!.enemy;
-    const overlay = this.add.container(0, 0).setDepth(30).setScrollFactor(0);
-    overlay.add(this.add.rectangle(VIEW_WIDTH / 2, VIEW_HEIGHT / 2, VIEW_WIDTH, VIEW_HEIGHT, 0x12111b, 0.96));
-    const enemyVariant = this.expedition.worldSeed % 3;
-    const enemyBody = enemyVariant === 0
-      ? this.add.rectangle(VIEW_WIDTH / 2, 154, 76, 76, 0x9f4851).setStrokeStyle(4, 0xf4deb0)
-      : enemyVariant === 1
-        ? this.add.triangle(VIEW_WIDTH / 2, 154, 0, 72, 38, 0, 76, 72, 0x7159a8).setStrokeStyle(4, 0xf4deb0)
-        : this.add.circle(VIEW_WIDTH / 2, 154, 42, 0x4d8c88).setStrokeStyle(4, 0xf4deb0);
-    this.tweens.add({ targets: enemyBody, y: 148, duration: 700, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
-    overlay.add(enemyBody);
-    overlay.add(this.add.text(VIEW_WIDTH / 2, 212, `${enemy.name}\nHP ${enemy.health}/${enemy.maxHealth}`, { fontFamily: "monospace", fontSize: "16px", color: "#f4deb0", align: "center" }).setOrigin(0.5));
-    overlay.add(this.add.text(VIEW_WIDTH / 2, 264, `${this.expedition.combat!.activeMemberRole.toUpperCase()}'S TURN`, { fontFamily: "monospace", fontSize: "13px", color: "#ffffff" }).setOrigin(0.5));
-    this.expedition.party.forEach((member, index) => {
-      overlay.add(this.add.text(24, 290 + index * 18, `${member.role.toUpperCase().padEnd(7)} ${member.health}/${member.maxHealth}`, { fontFamily: "monospace", fontSize: "11px", color: member.health > 0 ? "#f4deb0" : "#a84949" }));
-    });
-    overlay.add(this.add.text(620, 290, `POTIONS ${this.expedition.resources.potions}`, { fontFamily: "monospace", fontSize: "11px", color: "#f4deb0" }));
-    overlay.add(this.add.text(VIEW_WIDTH / 2, 332, this.expedition.combat!.log.at(-1) ?? "Choose an action.", { fontFamily: "monospace", fontSize: "11px", color: "#b6a37c", align: "center", wordWrap: { width: 650 } }).setOrigin(0.5));
-    (["STRIKE", "GUARD", "SIGNATURE", "ITEM", "RETREAT"] as const).forEach((label, index) => {
-      const button = this.add.text(38 + index * 146, 370, `[ ${label} ]`, { fontFamily: "monospace", fontSize: "15px", color: "#f4deb0", backgroundColor: "#30283a", padding: { x: 8, y: 8 } }).setInteractive({ useHandCursor: true });
-      const action = label === "RETREAT" ? { type: "retreat" } as const : { type: "combat", action: label === "STRIKE" ? "basic" : label === "GUARD" ? "guard" : label === "SIGNATURE" ? "signature" : "item" } as const;
-      button.on("pointerdown", () => this.playActionIntro(action));
-      this.input.keyboard!.once(["keydown-ONE", "keydown-TWO", "keydown-THREE", "keydown-FOUR", "keydown-FIVE"][index], () => this.playActionIntro(action));
-      overlay.add(button);
-    });
+    openBattlePresentation(this, this.expedition, (action) => this.playActionIntro(action));
   }
 
   private playActionIntro(action: ExpeditionAction) {
