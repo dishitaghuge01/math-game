@@ -119,9 +119,13 @@ class OverworldScene extends Phaser.Scene {
   }
 
   private createTextures() {
+    if (this.textures.exists("party-step-a")) return;
     const paint = this.add.graphics();
-    paint.fillStyle(0xf4deb0).fillRect(2, 0, 12, 16).fillStyle(0x251d2a).fillRect(0, 14, 16, 4);
-    paint.generateTexture("party-leader", 16, 18).clear();
+    paint.fillStyle(0xf4deb0).fillRect(2, 0, 12, 14).fillStyle(0x251d2a).fillRect(1, 14, 5, 4).fillRect(10, 14, 5, 4);
+    paint.generateTexture("party-step-a", 16, 18).clear();
+    paint.fillStyle(0xf4deb0).fillRect(2, 0, 12, 14).fillStyle(0x251d2a).fillRect(3, 14, 5, 4).fillRect(9, 14, 5, 4);
+    paint.generateTexture("party-step-b", 16, 18).clear();
+    if (!this.anims.exists("party-walk")) this.anims.create({ key: "party-walk", frames: [{ key: "party-step-a" }, { key: "party-step-b" }], frameRate: 6, repeat: -1 });
     paint.fillStyle(0x355548).fillRect(0, 0, 32, 32).fillStyle(0x2d493f).fillRect(2, 2, 28, 28);
     paint.generateTexture("grass", 32, 32).clear();
     paint.fillStyle(0x253147).fillRect(0, 0, 32, 32).fillStyle(0x172337).fillRect(2, 2, 28, 28);
@@ -150,10 +154,10 @@ class OverworldScene extends Phaser.Scene {
     for (let x = 928; x <= 1216; x += 32) walls.create(x, 544, "wall");
 
     const current = this.expedition.region.currentLocationId;
-    this.player = this.physics.add.sprite(128, WORLD_HEIGHT - 128, "party-leader").setDepth(5);
+    this.player = this.physics.add.sprite(128, WORLD_HEIGHT - 128, "party-step-a").setDepth(5).play("party-walk");
     this.player.setCollideWorldBounds(true).setSize(12, 12).setOffset(2, 6);
     this.physics.add.collider(this.player, walls);
-    this.followers = this.expedition.party.slice(1).map((member, index) => this.add.sprite(104 - index * 18, WORLD_HEIGHT - 120, "party-leader").setTint(index === 0 ? 0x9fd6ff : 0xdca5e8).setDepth(4));
+    this.followers = this.expedition.party.slice(1).map((member, index) => this.add.sprite(104 - index * 18, WORLD_HEIGHT - 120, "party-step-a").setTint(index === 0 ? 0x9fd6ff : 0xdca5e8).setDepth(4).play("party-walk"));
     this.add.text(12, 54, this.expedition.party.map((member) => `${member.name} ${member.health}/${member.maxHealth}`).join("  "), { fontFamily: "monospace", fontSize: "10px", color: "#f4deb0" }).setScrollFactor(0).setDepth(20);
 
     const visible = this.expedition.region.locations.filter((location) => location.revealed || location.id === current);
