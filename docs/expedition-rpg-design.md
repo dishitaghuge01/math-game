@@ -14,9 +14,12 @@
 - Exploration uses an illustrated, procedurally generated region map. Players choose between connected reachable locations—such as ruins, camps, settlements, hazards, and landmarks—and travel produces an Encounter or discovery. Direct free-roaming movement is out of scope.
 - Players see the Choice Vector as named Expedition Traits with descriptive tiers and recent shifts; raw values and equations remain hidden.
 
+- A complete Expedition contains three generated regions, each with approximately 5–7 reachable locations and a major party or world decision. The third region ends in a generated final Encounter and ending shaped by Expedition Traits, party relationships, and resolved choices.
+
 ## Open decisions
 
-- Campaign structure and ending conditions
+- Procedural asset style and production pipeline
+- Save, replay, and sharing model
 - Choice Vector dimensions and how players perceive them
 - Campaign structure and ending conditions
 - Procedural asset style and production pipeline

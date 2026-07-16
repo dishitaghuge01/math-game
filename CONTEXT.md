@@ -47,3 +47,7 @@ _Avoid_: overworld, free-roam map
 **Expedition Trait**:
 A player-facing, named interpretation of the hidden Choice Vector. It communicates a direction and recent change without exposing raw values or equations.
 _Avoid_: stat, alignment meter
+
+**Region**:
+One of three generated stages in an Expedition, containing a Region Map, a major decision, and a distinct thematic identity.
+_Avoid_: act, level
