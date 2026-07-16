@@ -115,12 +115,13 @@ export class OverworldScene extends Phaser.Scene {
   }
 
   private drawMap() {
-    const terrainPalette = this.expedition.worldSeed % 3 === 0 ? [0x4c7185, 0x3e6378] : this.expedition.worldSeed % 3 === 1 ? [0x557963, 0x486d58] : [0x716a4d, 0x625c43];
-    for (let x = 0; x < WORLD_WIDTH; x += 32) for (let y = 0; y < WORLD_HEIGHT; y += 32) {
+    const terrainPalette = this.expedition.worldSeed % 3 === 0 ? [0x567d8b, 0x406a76] : this.expedition.worldSeed % 3 === 1 ? [0x5d8068, 0x466b56] : [0x7b7356, 0x655e45];
+    this.add.rectangle(WORLD_WIDTH / 2, WORLD_HEIGHT / 2, WORLD_WIDTH, WORLD_HEIGHT, terrainPalette[0]);
+    for (let x = 24; x < WORLD_WIDTH; x += 48) for (let y = 24; y < WORLD_HEIGHT; y += 48) {
       const roll = seededTerrain(this.expedition.worldSeed, x, y);
-      this.add.rectangle(x + 16, y + 16, 32, 32, terrainPalette[roll % terrainPalette.length]);
-      if (roll % 19 === 0) this.add.image(x + 16, y + 16, "prop-tree").setScale(0.6).setDepth(1);
-      if (roll % 41 === 0) this.add.image(x + 16, y + 16, "prop-stone").setScale(0.45).setDepth(1);
+      if (roll % 5 === 0) this.add.ellipse(x, y, 30 + roll % 18, 18 + roll % 12, terrainPalette[1], 0.32).setDepth(0);
+      if (roll % 23 === 0) this.add.image(x, y, "prop-tree").setScale(0.62).setDepth(1);
+      if (roll % 47 === 0) this.add.image(x, y, "prop-stone").setScale(0.5).setDepth(1);
     }
     const current = this.expedition.region.currentLocationId;
     const visible = this.expedition.region.locations.filter((location) => location.revealed || location.id === current);
@@ -137,8 +138,9 @@ export class OverworldScene extends Phaser.Scene {
       const from = locationPositions.get(location.id);
       const to = locationPositions.get(neighborId);
       if (!from || !to || location.id > neighborId) return;
-      paths.lineStyle(6, 0x1d2b35, 0.8).lineBetween(from[0], from[1], to[0], to[1]);
-      paths.lineStyle(2, 0xb6a37c, 0.7).lineBetween(from[0], from[1], to[0], to[1]);
+      paths.lineStyle(14, 0x30453f, 0.72).lineBetween(from[0], from[1], to[0], to[1]);
+      paths.lineStyle(7, 0x9c875d, 0.9).lineBetween(from[0], from[1], to[0], to[1]);
+      paths.lineStyle(2, 0xe0c98b, 0.72).lineBetween(from[0], from[1], to[0], to[1]);
     }));
     visible.forEach((location, index) => {
       const [x, y] = positions[index] ?? [180 + index * 80, 180];
