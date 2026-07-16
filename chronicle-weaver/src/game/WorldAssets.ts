@@ -32,7 +32,11 @@ export function ensureWorldTextures(scene: Phaser.Scene) {
   paint.fillStyle(0x4a715f).fillRect(12, 8, 8, 19).fillStyle(0xf4deb0).fillRect(14, 5, 4, 8).fillStyle(0xdd9c49).fillRect(12, 13, 8, 8);
   paint.generateTexture("landmark-social", 32, 32).clear();
   paint.fillStyle(0x5a496e).fillRect(5, 6, 22, 21).fillStyle(0xb99bdd).fillRect(9, 10, 14, 11).fillStyle(0x2c2540).fillRect(13, 13, 6, 5);
-  paint.generateTexture("landmark-landmark", 32, 32).destroy();
+  paint.generateTexture("landmark-landmark", 32, 32).clear();
+  paint.fillStyle(0x4e3527).fillRect(13, 18, 6, 12).fillStyle(0x27392e).fillCircle(16, 12, 11).fillStyle(0x355548).fillCircle(12, 9, 7);
+  paint.generateTexture("prop-tree", 32, 32).clear();
+  paint.fillStyle(0x766e65).fillCircle(16, 18, 10).fillStyle(0xa89e8d).fillCircle(12, 14, 4).fillCircle(20, 17, 3);
+  paint.generateTexture("prop-stone", 32, 32).destroy();
 }
 
 export function seededTerrain(seed: number, x: number, y: number): number {

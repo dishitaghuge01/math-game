@@ -109,8 +109,8 @@ export class OverworldScene extends Phaser.Scene {
     for (let x = 0; x < WORLD_WIDTH; x += 32) for (let y = 0; y < WORLD_HEIGHT; y += 32) {
       const roll = seededTerrain(this.expedition.worldSeed, x, y);
       this.add.rectangle(x + 16, y + 16, 32, 32, terrainPalette[roll % terrainPalette.length]);
-      if (roll % 19 === 0) this.add.rectangle(x + 16, y + 16, 5, 9, 0x8ba36d, 0.7);
-      if (roll % 41 === 0) this.add.circle(x + 16, y + 16, 4, 0xb5a57d, 0.75);
+      if (roll % 19 === 0) this.add.image(x + 16, y + 16, "prop-tree").setScale(0.6).setDepth(1);
+      if (roll % 41 === 0) this.add.image(x + 16, y + 16, "prop-stone").setScale(0.45).setDepth(1);
     }
     const walls = this.physics.add.staticGroup();
     for (let x = 16; x < WORLD_WIDTH; x += 32) {
