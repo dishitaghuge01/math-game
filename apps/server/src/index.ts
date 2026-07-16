@@ -6,6 +6,7 @@ import decisionRouter from './routes/decision.js';
 import worldRouter from './routes/generate/world.js';
 import narrativeRouter from './routes/generate/narrative.js';
 import mechanicsRouter from './routes/generate/mechanics.js';
+import paletteRouter from './routes/generate/palette.js';
 
 const app = express();
 
@@ -40,6 +41,7 @@ app.use('/', decisionRouter);
 app.use('/generate', worldRouter);
 app.use('/generate', narrativeRouter);
 app.use('/generate', mechanicsRouter);
+app.use('/generate', paletteRouter);
 
 app.use((error: unknown, _req: Request, res: Response, _next: NextFunction) => {
   const message =

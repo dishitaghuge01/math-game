@@ -17,6 +17,9 @@ importers:
 
   apps/server:
     dependencies:
+      '@math-game/asset-gen':
+        specifier: workspace:*
+        version: link:../../packages/asset-gen
       '@math-game/core-math':
         specifier: workspace:*
         version: link:../../packages/core-math
