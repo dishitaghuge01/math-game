@@ -51,3 +51,7 @@ _Avoid_: stat, alignment meter
 **Region**:
 One of three generated stages in an Expedition, containing a Region Map, a major decision, and a distinct thematic identity.
 _Avoid_: act, level
+
+**Asset Grammar**:
+The authored library of visual shapes, textures, palettes, and composition rules from which Generation Rules create a cohesive Expedition’s visuals.
+_Avoid_: asset pack, AI image generator

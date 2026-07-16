@@ -15,10 +15,10 @@
 - Players see the Choice Vector as named Expedition Traits with descriptive tiers and recent shifts; raw values and equations remain hidden.
 
 - A complete Expedition contains three generated regions, each with approximately 5–7 reachable locations and a major party or world decision. The third region ends in a generated final Encounter and ending shaped by Expedition Traits, party relationships, and resolved choices.
+- Visuals use a coherent 2D illustrated SVG cut-paper-and-ink style. Generation Rules compose terrain, landmarks, party portraits and silhouettes, enemy forms, item icons, and region UI motifs from an authored shape and texture library plus the World Seed.
 
 ## Open decisions
 
-- Procedural asset style and production pipeline
 - Save, replay, and sharing model
 - Choice Vector dimensions and how players perceive them
 - Campaign structure and ending conditions
