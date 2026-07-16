@@ -57,6 +57,7 @@ export interface ExpeditionState {
     maxHealth: number;
     shield: number;
     abilities: string[];
+    signatureAbility: { name: string; effects: Array<"damage" | "shield" | "healing" | "buff" | "debuff" | "turn-manipulation"> };
     bond: number;
   }>;
   traits: Record<
