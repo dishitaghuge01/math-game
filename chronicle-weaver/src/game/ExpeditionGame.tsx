@@ -22,11 +22,14 @@ const WORLD_HEIGHT = 864;
  */
 export function ExpeditionGame({ expedition, onAction }: Props) {
   const host = useRef<HTMLDivElement>(null);
+  const sceneRef = useRef<OverworldScene | null>(null);
   const callback = useRef(onAction);
   callback.current = onAction;
 
   useEffect(() => {
     if (!host.current) return;
+    const scene = new OverworldScene(expedition, (action) => callback.current(action));
+    sceneRef.current = scene;
     const game = new Phaser.Game({
       type: Phaser.AUTO,
       parent: host.current,
@@ -35,17 +38,24 @@ export function ExpeditionGame({ expedition, onAction }: Props) {
       backgroundColor: "#181c2c",
       pixelArt: true,
       physics: { default: "arcade", arcade: { debug: false } },
-      scene: new OverworldScene(expedition, (action) => callback.current(action)),
+      scene,
       scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
     });
-    return () => game.destroy(true);
-  }, [expedition.expeditionId, expedition.region.currentLocationId, expedition.combat?.status]);
+    return () => {
+      sceneRef.current = null;
+      game.destroy(true);
+    };
+  }, [expedition.expeditionId]);
+
+  useEffect(() => {
+    sceneRef.current?.applyExpeditionState(expedition);
+  }, [expedition]);
 
   return <div ref={host} className="w-full overflow-hidden rounded-sm border-4 border-[color:var(--color-ink)] shadow-xl" aria-label="Playable Expedition map" />;
 }
 
 class OverworldScene extends Phaser.Scene {
-  private readonly expedition: ExpeditionState;
+  private expedition: ExpeditionState;
   private readonly submit: Props["onAction"];
   private player!: Phaser.Physics.Arcade.Sprite;
   private followers: Phaser.GameObjects.Sprite[] = [];
@@ -64,6 +74,11 @@ class OverworldScene extends Phaser.Scene {
     super("overworld");
     this.expedition = expedition;
     this.submit = submit;
+  }
+
+  applyExpeditionState(expedition: ExpeditionState) {
+    this.expedition = expedition;
+    if (this.sys.isActive()) this.scene.restart();
   }
 
   create() {
