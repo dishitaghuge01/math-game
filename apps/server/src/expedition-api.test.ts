@@ -63,6 +63,18 @@ describe('Expedition API', () => {
     expect(await resumed.json()).toEqual(next);
   });
 
+  it('rejects travel while a Combat Encounter is active', async () => {
+    const expeditionId = `locked-travel-test-${Date.now()}`;
+    const started = await fetch(`${baseUrl}/expeditions`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ expeditionId, worldSeed: 8675309 }) });
+    const expedition = await started.json() as { region: { locations: Array<{ id: string; type: string }> } };
+    const combatLocation = expedition.region.locations.find((location) => location.type === 'combat')!;
+    await fetch(`${baseUrl}/expeditions/${expeditionId}/actions`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'travel', destinationId: combatLocation.id }) });
+
+    const response = await fetch(`${baseUrl}/expeditions/${expeditionId}/actions`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'travel', destinationId: expedition.region.locations[0].id }) });
+    expect(response.status).toBe(400);
+    expect((await response.json() as { error: string }).error).toMatch(/combat/i);
+  });
+
   it('opens a three-member Combat Encounter and resolves a party action', async () => {
     const expeditionId = `combat-test-${Date.now()}`;
     const started = await fetch(`${baseUrl}/expeditions`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ expeditionId, worldSeed: 314159 }) });
@@ -89,5 +101,31 @@ describe('Expedition API', () => {
     }
     expect(state.combat.status).toBe('victory');
     expect(state.resources).toEqual({ gold: 5, experience: 10, potions: 2 });
+  });
+
+  it('exports an action history and imports it as an independent deterministic branch', async () => {
+    const expeditionId = `code-test-${Date.now()}`;
+    const started = await fetch(`${baseUrl}/expeditions`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ expeditionId, worldSeed: 424242 }) });
+    const initial = await started.json() as { region: { locations: Array<{ id: string; type: string }> } };
+    const discovery = initial.region.locations.find((location) => location.type === 'discovery')!;
+    const social = initial.region.locations.find((location) => location.type === 'social')!;
+    const combat = initial.region.locations.find((location) => location.type === 'combat')!;
+
+    for (const action of [{ type: 'travel', destinationId: combat.id }, { type: 'combat', action: 'signature' }, { type: 'combat', action: 'signature' }, { type: 'combat', action: 'signature' }]) {
+      await fetch(`${baseUrl}/expeditions/${expeditionId}/actions`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(action) });
+    }
+    for (const action of [{ type: 'travel', destinationId: discovery.id }, { type: 'discovery', choice: 'search' }, { type: 'travel', destinationId: social.id }, { type: 'social', choice: 'share' }]) {
+      await fetch(`${baseUrl}/expeditions/${expeditionId}/actions`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(action) });
+    }
+
+    const exported = await fetch(`${baseUrl}/expeditions/${expeditionId}/code`);
+    expect(exported.status).toBe(200);
+    const { code } = await exported.json() as { code: string };
+    const importedResponse = await fetch(`${baseUrl}/expeditions/import`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ expeditionId: `${expeditionId}-branch`, code }) });
+    expect(importedResponse.status).toBe(201);
+    const imported = await importedResponse.json() as { expeditionId: string; worldSeed: number; resources: unknown; traits: unknown; region: unknown };
+    const original = await (await fetch(`${baseUrl}/expeditions/${expeditionId}`)).json() as typeof imported;
+    expect(imported).toMatchObject({ worldSeed: original.worldSeed, resources: original.resources, traits: original.traits, region: original.region });
+    expect(imported.expeditionId).not.toBe(original.expeditionId);
   });
 });

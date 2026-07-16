@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { Router, type NextFunction, type Request, type Response } from 'express';
-import { loadExpedition, resolveCombatAction, resolveDiscovery, resolveSocial, retreatToCamp, startExpedition, travelToLocation } from '../services/expeditionService.js';
+import { applyExpeditionAction, exportExpeditionCode, importExpeditionCode, isExpeditionAction, loadExpedition, startExpedition, type ExpeditionAction } from '../services/expeditionService.js';
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -19,13 +19,28 @@ router.post('/expeditions', (req: Request, res: Response, next: NextFunction) =>
 router.post('/expeditions/:expeditionId/actions', (req: Request, res: Response, next: NextFunction) => {
   try {
     const expeditionId = Array.isArray(req.params.expeditionId) ? req.params.expeditionId[0] : req.params.expeditionId;
-    const { type, destinationId } = req.body ?? {};
-    if (type === 'travel' && typeof destinationId === 'string') return res.json(travelToLocation(expeditionId, destinationId));
-    if (type === 'combat' && (req.body.action === 'basic' || req.body.action === 'guard' || req.body.action === 'signature')) return res.json(resolveCombatAction(expeditionId, req.body.action));
-    if (type === 'retreat') return res.json(retreatToCamp(expeditionId));
-    if (type === 'discovery' && (req.body.choice === 'search' || req.body.choice === 'press-on')) return res.json(resolveDiscovery(expeditionId, req.body.choice));
-    if (type === 'social' && (req.body.choice === 'share' || req.body.choice === 'command')) return res.json(resolveSocial(expeditionId, req.body.choice));
-    return res.status(400).json({ error: 'Invalid Expedition action' });
+    const action = req.body as ExpeditionAction;
+    if (!isExpeditionAction(action)) return res.status(400).json({ error: 'Invalid Expedition action' });
+    return res.json(applyExpeditionAction(expeditionId, action));
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get('/expeditions/:expeditionId/code', (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const expeditionId = Array.isArray(req.params.expeditionId) ? req.params.expeditionId[0] : req.params.expeditionId;
+    return res.json({ code: exportExpeditionCode(expeditionId) });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/expeditions/import', (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { expeditionId = randomUUID(), code } = req.body ?? {};
+    if (typeof expeditionId !== 'string' || typeof code !== 'string') return res.status(400).json({ error: 'Invalid expeditionId or Expedition Code' });
+    return res.status(201).json(importExpeditionCode(expeditionId, code));
   } catch (error) {
     next(error);
   }

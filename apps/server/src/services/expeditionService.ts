@@ -11,6 +11,13 @@ export interface RegionLocation {
   revealed: boolean;
 }
 
+export type ExpeditionAction =
+  | { type: 'travel'; destinationId: string }
+  | { type: 'combat'; action: 'basic' | 'guard' | 'signature' }
+  | { type: 'retreat' }
+  | { type: 'discovery'; choice: 'search' | 'press-on' }
+  | { type: 'social'; choice: 'share' | 'command' };
+
 export interface ExpeditionState {
   expeditionId: string;
   worldSeed: number;
@@ -19,6 +26,7 @@ export interface ExpeditionState {
   region: { name: string; currentLocationId: string; campLocationId: string; locations: RegionLocation[] };
   combat: { status: 'active' | 'victory' | 'defeat'; enemy: { name: string; health: number; maxHealth: number }; activeMemberRole: PartyRole; log: string[] } | null;
   resources: { gold: number; experience: number; potions: number };
+  actionHistory: ExpeditionAction[];
 }
 
 const names: Record<PartyRole, string[]> = {
@@ -50,6 +58,7 @@ export function startExpedition(expeditionId: string, requestedSeed?: number): E
     region: createRegion(worldSeed),
     combat: null,
     resources: { gold: 0, experience: 0, potions: 2 },
+    actionHistory: [],
   };
   const now = new Date().toISOString();
   db.prepare('INSERT INTO expeditions (expedition_id, state_json, created_at, updated_at) VALUES (?, ?, ?, ?)')
@@ -60,6 +69,7 @@ export function startExpedition(expeditionId: string, requestedSeed?: number): E
 export function travelToLocation(expeditionId: string, destinationId: string): ExpeditionState {
   const state = loadExpedition(expeditionId);
   if (!state) throw Object.assign(new Error('Expedition not found'), { status: 404 });
+  if (state.combat?.status === 'active') throw Object.assign(new Error('Cannot travel during an active Combat Encounter'), { status: 400 });
   const origin = state.region.locations.find((location) => location.id === state.region.currentLocationId);
   const destination = state.region.locations.find((location) => location.id === destinationId);
   if (!origin?.connectedTo.includes(destinationId) || !destination) throw Object.assign(new Error('Destination is not reachable'), { status: 400 });
@@ -73,6 +83,7 @@ export function travelToLocation(expeditionId: string, destinationId: string): E
     const neighbor = state.region.locations.find((location) => location.id === neighborId);
     if (neighbor) neighbor.revealed = true;
   }
+  recordAction(state, { type: 'travel', destinationId });
   saveExpedition(state);
   return state;
 }
@@ -90,6 +101,7 @@ export function resolveSocial(expeditionId: string, choice: 'share' | 'command')
     state.party.forEach((member) => { member.bond = Math.max(-3, member.bond - 1); });
   }
   location.type = 'landmark';
+  recordAction(state, { type: 'social', choice });
   saveExpedition(state);
   return state;
 }
@@ -106,6 +118,7 @@ export function resolveDiscovery(expeditionId: string, choice: 'search' | 'press
     state.traits.resolve = { tier: 'steadfast', recentShift: 'rising' };
   }
   location.type = 'landmark';
+  recordAction(state, { type: 'discovery', choice });
   saveExpedition(state);
   return state;
 }
@@ -121,6 +134,7 @@ export function retreatToCamp(expeditionId: string): ExpeditionState {
   state.resources.potions = Math.max(0, state.resources.potions - 1);
   const blocked = state.region.locations.find((location) => location.type === 'landmark');
   if (blocked) blocked.revealed = false;
+  recordAction(state, { type: 'retreat' });
   saveExpedition(state);
   return state;
 }
@@ -130,7 +144,7 @@ export function resolveCombatAction(expeditionId: string, action: 'basic' | 'gua
   if (!state) throw Object.assign(new Error('Expedition not found'), { status: 404 });
   if (!state.combat || state.combat.status !== 'active') throw Object.assign(new Error('No active Combat Encounter'), { status: 400 });
   const actingRole = state.combat.activeMemberRole;
-  const signatureDamage: Record<PartyRole, number> = { fighter: 6, mage: 8, support: 3 };
+  const signatureDamage: Record<PartyRole, number> = { fighter: 6, mage: 8, support: 4 };
   const damage = action === 'signature' ? signatureDamage[actingRole] : action === 'basic' ? 4 : 1;
   if (actingRole === 'support' && action === 'signature') {
     const wounded = state.party.find((member) => member.health < member.maxHealth);
@@ -159,13 +173,61 @@ export function resolveCombatAction(expeditionId: string, action: 'basic' | 'gua
     const roles: PartyRole[] = ['fighter', 'mage', 'support'];
     state.combat.activeMemberRole = roles[(roles.indexOf(actingRole) + 1) % roles.length];
   }
+  recordAction(state, { type: 'combat', action });
   saveExpedition(state);
   return state;
+}
+
+export function applyExpeditionAction(expeditionId: string, action: ExpeditionAction): ExpeditionState {
+  switch (action.type) {
+    case 'travel': return travelToLocation(expeditionId, action.destinationId);
+    case 'combat': return resolveCombatAction(expeditionId, action.action);
+    case 'retreat': return retreatToCamp(expeditionId);
+    case 'discovery': return resolveDiscovery(expeditionId, action.choice);
+    case 'social': return resolveSocial(expeditionId, action.choice);
+  }
+}
+
+export function exportExpeditionCode(expeditionId: string): string {
+  const state = loadExpedition(expeditionId);
+  if (!state) throw Object.assign(new Error('Expedition not found'), { status: 404 });
+  return Buffer.from(JSON.stringify({ worldSeed: state.worldSeed, actions: state.actionHistory ?? [] })).toString('base64url');
+}
+
+export function importExpeditionCode(expeditionId: string, code: string): ExpeditionState {
+  let replay: { worldSeed: number; actions: ExpeditionAction[] };
+  try {
+    replay = JSON.parse(Buffer.from(code, 'base64url').toString('utf8')) as typeof replay;
+  } catch {
+    throw Object.assign(new Error('Invalid Expedition Code'), { status: 400 });
+  }
+  if (!Number.isInteger(replay.worldSeed) || replay.worldSeed < 1 || !Array.isArray(replay.actions) || !replay.actions.every(isExpeditionAction)) {
+    throw Object.assign(new Error('Invalid Expedition Code'), { status: 400 });
+  }
+  if (loadExpedition(expeditionId)) throw Object.assign(new Error('Expedition already exists'), { status: 409 });
+  startExpedition(expeditionId, replay.worldSeed);
+  for (const action of replay.actions) applyExpeditionAction(expeditionId, action);
+  return loadExpedition(expeditionId)!;
 }
 
 export function loadExpedition(expeditionId: string): ExpeditionState | null {
   const row = db.prepare('SELECT state_json FROM expeditions WHERE expedition_id = ?').get(expeditionId) as { state_json: string } | undefined;
   return row ? JSON.parse(row.state_json) as ExpeditionState : null;
+}
+
+export function isExpeditionAction(action: unknown): action is ExpeditionAction {
+  if (!action || typeof action !== 'object' || !('type' in action)) return false;
+  const value = action as Record<string, unknown>;
+  return (value.type === 'travel' && typeof value.destinationId === 'string')
+    || (value.type === 'combat' && (value.action === 'basic' || value.action === 'guard' || value.action === 'signature'))
+    || value.type === 'retreat'
+    || (value.type === 'discovery' && (value.choice === 'search' || value.choice === 'press-on'))
+    || (value.type === 'social' && (value.choice === 'share' || value.choice === 'command'));
+}
+
+function recordAction(state: ExpeditionState, action: ExpeditionAction): void {
+  state.actionHistory ??= [];
+  state.actionHistory.push(action);
 }
 
 function saveExpedition(state: ExpeditionState): void {
