@@ -1,15 +1,7 @@
 import Phaser from "phaser";
 import { useEffect, useRef } from "react";
 import type { ExpeditionState } from "@/api/gameApi";
-
-type ExpeditionAction =
-  | { type: "travel"; destinationId: string }
-  | { type: "combat"; action: "basic" | "guard" | "signature" | "item"; dodgeHits?: number }
-  | { type: "discovery"; choice: "search" | "press-on" }
-  | { type: "social"; choice: "share" | "command" }
-  | { type: "retreat" };
-
-type Props = { expedition: ExpeditionState; onAction: (action: ExpeditionAction) => void };
+import type { ExpeditionAction, ExpeditionGameProps } from "./types";
 
 const VIEW_WIDTH = 768;
 const VIEW_HEIGHT = 432;
@@ -20,7 +12,7 @@ const WORLD_HEIGHT = 864;
  * Vertical-slice Phaser surface: walk, collide, interact with a reachable
  * landmark, then hand the Encounter outcome back to the authoritative API.
  */
-export function ExpeditionGame({ expedition, onAction }: Props) {
+export function ExpeditionGame({ expedition, onAction }: ExpeditionGameProps) {
   const host = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<OverworldScene | null>(null);
   const callback = useRef(onAction);
@@ -56,7 +48,7 @@ export function ExpeditionGame({ expedition, onAction }: Props) {
 
 class OverworldScene extends Phaser.Scene {
   private expedition: ExpeditionState;
-  private readonly submit: Props["onAction"];
+  private readonly submit: ExpeditionGameProps["onAction"];
   private player!: Phaser.Physics.Arcade.Sprite;
   private followers: Phaser.GameObjects.Sprite[] = [];
   private keys!: Phaser.Types.Input.Keyboard.CursorKeys;
@@ -71,7 +63,7 @@ class OverworldScene extends Phaser.Scene {
   private invulnerableUntil = 0;
   private actionSelecting = false;
 
-  constructor(expedition: ExpeditionState, submit: Props["onAction"]) {
+  constructor(expedition: ExpeditionState, submit: ExpeditionGameProps["onAction"]) {
     super("overworld");
     this.expedition = expedition;
     this.submit = submit;
