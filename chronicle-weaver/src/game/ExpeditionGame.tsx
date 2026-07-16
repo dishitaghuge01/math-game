@@ -71,10 +71,13 @@ class OverworldScene extends Phaser.Scene {
 
   applyExpeditionState(expedition: ExpeditionState) {
     this.expedition = expedition;
-    if (this.sys.isActive()) this.scene.restart();
+    if (!this.sys.isActive()) return;
+    this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => this.scene.restart());
+    this.cameras.main.fadeOut(170, 18, 16, 27);
   }
 
   create() {
+    this.cameras.main.fadeIn(170, 18, 16, 27);
     this.createTextures();
     this.drawMap();
     this.keys = this.input.keyboard!.createCursorKeys();
