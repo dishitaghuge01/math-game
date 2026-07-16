@@ -142,6 +142,8 @@ export function resolveCombatAction(expeditionId: string, action: 'basic' | 'gua
     state.combat.status = 'victory';
     state.resources.gold += 5;
     state.resources.experience += 10;
+    const clearedLocation = state.region.locations.find((location) => location.id === state.region.currentLocationId);
+    if (clearedLocation) clearedLocation.type = 'landmark';
     state.combat.log.push('The road is clear. The Party claims 5 gold and 10 experience.');
   } else {
     const target = state.party.find((member) => member.role === actingRole)!;
