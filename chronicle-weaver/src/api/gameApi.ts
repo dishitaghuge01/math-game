@@ -1,7 +1,6 @@
 import { getOrCreateClientIds } from "./session";
 
-const BASE_URL =
-  (import.meta.env.VITE_SERVER_URL as string | undefined) ?? "http://localhost:4000";
+const BASE_URL = (import.meta.env.VITE_SERVER_URL as string | undefined) ?? "http://localhost:4000";
 
 export interface DecisionVector {
   morality: number;
@@ -75,7 +74,9 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     let body: unknown = null;
     try {
       body = await res.json();
-    } catch {}
+    } catch {
+      // The API can return a non-JSON error response.
+    }
     const message =
       body && typeof body === "object" && "error" in body
         ? String((body as { error: unknown }).error)
@@ -115,9 +116,7 @@ export async function postDecision(args: {
 export async function fetchWorld(chunkId: string): Promise<WorldChunk> {
   const { sessionId } = getOrCreateClientIds();
   const q = new URLSearchParams({ sessionId });
-  return request<WorldChunk>(
-    `/generate/world/${encodeURIComponent(chunkId)}?${q.toString()}`,
-  );
+  return request<WorldChunk>(`/generate/world/${encodeURIComponent(chunkId)}?${q.toString()}`);
 }
 
 export async function fetchMechanics(baseDifficulty = 1): Promise<MechanicsResponse> {
