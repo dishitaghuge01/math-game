@@ -187,6 +187,7 @@ class OverworldScene extends Phaser.Scene {
     if (current.type !== "discovery" && current.type !== "social") return;
     this.battleOpen = true;
     const social = current.type === "social";
+    const speaker = social ? this.expedition.party[2] : this.expedition.party[1];
     const title = social ? "PILGRIM LANTERNS" : current.name.toUpperCase();
     const line = social
       ? "The distant lanterns split the Party.\nWho carries the burden?"
@@ -199,6 +200,8 @@ class OverworldScene extends Phaser.Scene {
     const overlay = this.add.container(0, 0).setDepth(30).setScrollFactor(0);
     overlay.add(this.add.rectangle(VIEW_WIDTH / 2, VIEW_HEIGHT / 2, VIEW_WIDTH, VIEW_HEIGHT, 0x12111b, 0.94));
     overlay.add(this.add.rectangle(104, 134, 116, 116, social ? 0x668e75 : 0x5596a3).setStrokeStyle(4, 0xf4deb0));
+    overlay.add(this.add.rectangle(104, 134, 42, 56, social ? 0xdca5e8 : 0x9fd6ff).setStrokeStyle(2, 0x251d2a));
+    overlay.add(this.add.text(182, 58, `${speaker.name.toUpperCase()} — ${speaker.role.toUpperCase()}`, { fontFamily: "monospace", fontSize: "11px", color: "#b6a37c" }));
     overlay.add(this.add.text(182, 78, title, { fontFamily: "monospace", fontSize: "18px", color: "#f4deb0" }));
     overlay.add(this.addTypewriterText(182, 116, line));
     choices.forEach(([label, action], index) => {
