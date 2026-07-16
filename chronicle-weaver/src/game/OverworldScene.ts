@@ -107,6 +107,15 @@ export class OverworldScene extends Phaser.Scene {
 
     const visible = this.expedition.region.locations.filter((location) => location.revealed || location.id === current);
     const positions = [[160, 160], [550, 180], [970, 220], [1320, 340], [1050, 660], [600, 640], [200, 580]];
+    const locationPositions = new Map(visible.map((location, index) => [location.id, positions[index] ?? [180 + index * 80, 180]]));
+    const paths = this.add.graphics().setDepth(2);
+    visible.forEach((location) => location.connectedTo.forEach((neighborId) => {
+      const from = locationPositions.get(location.id);
+      const to = locationPositions.get(neighborId);
+      if (!from || !to || location.id > neighborId) return;
+      paths.lineStyle(6, 0x1d2b35, 0.8).lineBetween(from[0], from[1], to[0], to[1]);
+      paths.lineStyle(2, 0xb6a37c, 0.7).lineBetween(from[0], from[1], to[0], to[1]);
+    }));
     visible.forEach((location, index) => {
       const [x, y] = positions[index] ?? [180 + index * 80, 180];
       const color = location.type === "combat" ? 0xa84949 : location.type === "camp" ? 0xdd9c49 : location.type === "discovery" ? 0x5596a3 : location.type === "social" ? 0x668e75 : 0x8d659f;
