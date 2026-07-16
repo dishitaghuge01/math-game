@@ -23,13 +23,36 @@ export function openBattlePresentation(scene: Phaser.Scene, expedition: Expediti
   overlay.add(scene.add.circle(WIDTH / 2 - 11, 148, 4, eyeColor));
   overlay.add(scene.add.circle(WIDTH / 2 + 11, 148, 4, eyeColor));
   overlay.add(scene.add.text(WIDTH / 2, 212, `${enemy.name}\nHP ${enemy.health}/${enemy.maxHealth}${enemy.weakened ? "  WEAK" : ""}`, { fontFamily: "monospace", fontSize: "16px", color: "#f4deb0", align: "center" }).setOrigin(0.5));
+  if (enemy.weakened) {
+    const weakenMarks = [-1, 1].map((side) => scene.add.circle(WIDTH / 2 + side * 48, 142, 5, 0xc397e8));
+    weakenMarks.forEach((mark, index) => {
+      if (!prefersReducedMotion()) scene.tweens.add({ targets: mark, y: 128 + index * 28, alpha: 0.25, duration: 500, yoyo: true, repeat: -1 });
+      overlay.add(mark);
+    });
+  }
   const actor = expedition.party.find((member) => member.role === expedition.combat!.activeMemberRole)!;
   overlay.add(scene.add.text(WIDTH / 2, 264, `${actor.name.toUpperCase()}'S TURN`, { fontFamily: "monospace", fontSize: "13px", color: "#ffffff" }).setOrigin(0.5));
   overlay.add(scene.add.text(WIDTH / 2, 280, `SIGNATURE: ${actor.signatureAbility.name.toUpperCase()}`, { fontFamily: "monospace", fontSize: "10px", color: "#b6a37c" }).setOrigin(0.5));
-  expedition.party.forEach((member, index) => overlay.add(scene.add.text(24, 290 + index * 18, `${member.role.toUpperCase().padEnd(7)} ${member.health}/${member.maxHealth}${member.shield ? `  ◈${member.shield}` : ""}`, { fontFamily: "monospace", fontSize: "11px", color: member.health > 0 ? "#f4deb0" : "#a84949" })));
+  expedition.party.forEach((member, index) => {
+    const y = 290 + index * 18;
+    overlay.add(scene.add.text(24, y, `${member.role.toUpperCase().padEnd(7)} ${member.health}/${member.maxHealth}${member.shield ? `  ◈${member.shield}` : ""}`, { fontFamily: "monospace", fontSize: "11px", color: member.health > 0 ? "#f4deb0" : "#a84949" }));
+    if (member.shield) {
+      const barrier = scene.add.circle(214, y + 5, 8, 0x7cbde2, 0.18).setStrokeStyle(1, 0xa9e1ff, 0.9);
+      if (!prefersReducedMotion()) scene.tweens.add({ targets: barrier, alpha: 0.45, duration: 550, yoyo: true, repeat: -1 });
+      overlay.add(barrier);
+    }
+  });
   overlay.add(scene.add.text(620, 290, `POTIONS ${expedition.resources.potions}`, { fontFamily: "monospace", fontSize: "11px", color: "#f4deb0" }));
   const latestLog = expedition.combat!.log.at(-1) ?? "Choose an action.";
   overlay.add(scene.add.text(WIDTH / 2, 332, latestLog, { fontFamily: "monospace", fontSize: "11px", color: "#b6a37c", align: "center", wordWrap: { width: 650 } }).setOrigin(0.5));
+  if (latestLog.includes("recovers")) {
+    const sparks = [-18, 0, 18].map((offset) => scene.add.circle(210 + offset, 300, 4, 0x7ee0a2));
+    sparks.forEach((spark) => {
+      if (prefersReducedMotion()) spark.setAlpha(0);
+      else scene.tweens.add({ targets: spark, y: 270, alpha: 0, duration: 650, onComplete: () => spark.destroy() });
+      overlay.add(spark);
+    });
+  }
   const damage = /for (\d+) damage/.exec(latestLog)?.[1];
   if (damage) {
     const targetX = latestLog.includes("strikes") ? 620 : WIDTH / 2;
