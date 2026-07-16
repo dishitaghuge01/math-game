@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Compass, Flame, MapPin, Shield, Sparkles, Swords } from "lucide-react";
 import { fetchExpeditionCode, importExpeditionCode, postExpeditionAction, startExpedition, type ExpeditionState } from "@/api/gameApi";
+import { ExpeditionGame } from "@/game/ExpeditionGame";
 
 export const Route = createFileRoute("/world")({ component: RegionMapPage });
 
@@ -55,19 +56,8 @@ function RegionMapPage() {
         <p className="font-hand italic mt-2">The party rests at {current.name}.</p>
         {state.region.rivalAdvanced && <p className="font-hand italic text-[color:var(--color-blood)]">A rival has advanced through the fog while the Party recovered.</p>}
       </header>
-      <section className="parchment-card mt-8 p-5 sm:p-8">
-        <div className="grid gap-3">
-          {state.region.locations.map((location, index) => (
-            <Location
-              key={location.id}
-              location={location}
-              state={state}
-              busy={travel.isPending}
-              onTravel={() => travel.mutate({ type: "travel", destinationId: location.id })}
-              index={index}
-            />
-          ))}
-        </div>
+      <section className="mt-8">
+        <ExpeditionGame expedition={state} onAction={(action) => travel.mutate(action)} />
       </section>
       {state.combat?.status === "active" && (
         <CombatPanel
