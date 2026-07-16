@@ -69,6 +69,7 @@ class OverworldScene extends Phaser.Scene {
   private bullets?: Phaser.GameObjects.Group;
   private dodgeHits = 0;
   private invulnerableUntil = 0;
+  private actionSelecting = false;
 
   constructor(expedition: ExpeditionState, submit: Props["onAction"]) {
     super("overworld");
@@ -240,14 +241,28 @@ class OverworldScene extends Phaser.Scene {
     (["STRIKE", "GUARD", "SIGNATURE", "RETREAT"] as const).forEach((label, index) => {
       const button = this.add.text(95 + index * 150, 350, `[ ${label} ]`, { fontFamily: "monospace", fontSize: "15px", color: "#f4deb0", backgroundColor: "#30283a", padding: { x: 8, y: 8 } }).setInteractive({ useHandCursor: true });
       const action = label === "RETREAT" ? { type: "retreat" } as const : { type: "combat", action: label === "STRIKE" ? "basic" : label === "GUARD" ? "guard" : "signature" } as const;
-      button.on("pointerdown", () => this.beginDodgePhase(action));
-      this.input.keyboard!.once(["keydown-ONE", "keydown-TWO", "keydown-THREE", "keydown-FOUR"][index], () => this.beginDodgePhase(action));
+      button.on("pointerdown", () => this.playActionIntro(action));
+      this.input.keyboard!.once(["keydown-ONE", "keydown-TWO", "keydown-THREE", "keydown-FOUR"][index], () => this.playActionIntro(action));
       overlay.add(button);
+    });
+  }
+
+  private playActionIntro(action: ExpeditionAction) {
+    if (this.actionSelecting) return;
+    this.actionSelecting = true;
+    const actor = this.expedition.combat?.activeMemberRole ?? "party";
+    const label = action.type === "combat" ? action.action.toUpperCase() : "RETREAT";
+    const announcement = this.add.text(VIEW_WIDTH / 2, 300, `${actor.toUpperCase()} — ${label}!`, { fontFamily: "monospace", fontSize: "18px", color: "#ffffff", backgroundColor: "#7b3140", padding: { x: 12, y: 8 } }).setOrigin(0.5).setDepth(40).setScrollFactor(0);
+    this.tweens.add({ targets: announcement, scaleX: 1.12, scaleY: 1.12, duration: 160, yoyo: true });
+    this.time.delayedCall(430, () => {
+      announcement.destroy();
+      this.beginDodgePhase(action);
     });
   }
 
   private beginDodgePhase(action: ExpeditionAction) {
     this.dodgeAction = action;
+    this.actionSelecting = false;
     this.dodgeHits = 0;
     this.invulnerableUntil = 0;
     this.children.getAll().filter((child) => child.depth === 30).forEach((child) => child.destroy());
