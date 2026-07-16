@@ -145,10 +145,9 @@ export class OverworldScene extends Phaser.Scene {
     }));
     visible.forEach((location, index) => {
       const [x, y] = positions[index] ?? [180 + index * 80, 180];
-      const color = location.type === "combat" ? 0xa84949 : location.type === "camp" ? 0xdd9c49 : location.type === "discovery" ? 0x5596a3 : location.type === "social" ? 0x668e75 : 0x8d659f;
       const marker = this.add.container(x, y).setDepth(4);
       const landmarkRoll = seededTerrain(this.expedition.worldSeed, x, y);
-      marker.add([this.add.rectangle(0, 18, 46, 9, 0x182333, 0.6), this.add.rectangle(0, 0, 30, 34, color).setStrokeStyle(3, 0x201b27), this.add.circle(-22, 3, 6 + landmarkRoll % 5, 0x27392e), this.add.circle(22, 5, 5 + landmarkRoll % 4, 0x27392e), this.add.text(0, 28, location.name, { fontFamily: "monospace", fontSize: "10px", color: "#f4deb0", align: "center", wordWrap: { width: 110 } }).setOrigin(0.5, 0)]);
+      marker.add([this.add.rectangle(0, 18, 46, 9, 0x182333, 0.6), this.add.image(0, 0, `landmark-${location.type}`).setScale(1.2), this.add.circle(-22, 3, 6 + landmarkRoll % 5, 0x27392e), this.add.circle(22, 5, 5 + landmarkRoll % 4, 0x27392e), this.add.text(0, 28, location.name, { fontFamily: "monospace", fontSize: "10px", color: "#f4deb0", align: "center", wordWrap: { width: 110 } }).setOrigin(0.5, 0)]);
       if (location.id === current) marker.add(this.add.text(0, -28, "CAMP", { fontFamily: "monospace", fontSize: "10px", color: "#ffffff" }).setOrigin(0.5));
       this.landmarks.push({ id: location.id, marker });
     });
