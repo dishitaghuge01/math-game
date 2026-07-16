@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 import { playCue } from "./AudioCue";
+import { prefersReducedMotion } from "./Settings";
 import type { ExpeditionAction } from "./types";
 
 const WIDTH = 768;
@@ -61,7 +62,7 @@ export class DodgePhase {
           this.soul!.setFillStyle(0xffffff);
           this.scene.time.delayedCall(120, () => this.soul?.setFillStyle(0xff4f6d));
           playCue("hit");
-          this.scene.cameras.main.shake(80, 0.008);
+          if (!prefersReducedMotion()) this.scene.cameras.main.shake(80, 0.008);
         }
         projectile.destroy();
       }

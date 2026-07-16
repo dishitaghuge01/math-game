@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import type { ExpeditionState } from "@/api/gameApi";
 import { playCue } from "./AudioCue";
+import { prefersReducedMotion } from "./Settings";
 import type { ExpeditionAction } from "./types";
 
 const WIDTH = 768;
@@ -50,7 +51,8 @@ export function openEncounterDialogue(scene: Phaser.Scene, expedition: Expeditio
 }
 
 function addTypewriterText(scene: Phaser.Scene, x: number, y: number, line: string) {
-  const text = scene.add.text(x, y, "", { fontFamily: "monospace", fontSize: "14px", color: "#ffffff", lineSpacing: 8 });
+  const text = scene.add.text(x, y, prefersReducedMotion() ? line : "", { fontFamily: "monospace", fontSize: "14px", color: "#ffffff", lineSpacing: 8 });
+  if (prefersReducedMotion()) return text;
   let cursor = 0;
   const reveal = () => {
     cursor += 1;

@@ -5,6 +5,7 @@ import { openBattlePresentation } from "./BattlePresentation";
 import { openCampPresentation, openEndingPresentation } from "./ConclusionPresentation";
 import { DodgePhase } from "./DodgePhase";
 import { openEncounterDialogue } from "./DialoguePresentation";
+import { prefersReducedMotion, toggleReducedMotion } from "./Settings";
 import { ensureWorldTextures, seededTerrain } from "./WorldAssets";
 import { VIEW_HEIGHT, VIEW_WIDTH, WORLD_HEIGHT, WORLD_WIDTH } from "./constants";
 import type { ExpeditionAction, ExpeditionGameProps } from "./types";
@@ -19,6 +20,8 @@ export class OverworldScene extends Phaser.Scene {
   private interact!: Phaser.Input.Keyboard.Key;
   private soundToggle!: Phaser.Input.Keyboard.Key;
   private soundStatus!: Phaser.GameObjects.Text;
+  private motionToggle!: Phaser.Input.Keyboard.Key;
+  private motionStatus!: Phaser.GameObjects.Text;
   private prompt!: Phaser.GameObjects.Text;
   private landmarks: Array<{ id: string; marker: Phaser.GameObjects.Container }> = [];
   private battleOpen = false;
@@ -35,24 +38,30 @@ export class OverworldScene extends Phaser.Scene {
     this.previousExpedition = this.expedition;
     this.expedition = expedition;
     if (!this.sys.isActive()) return;
+    if (prefersReducedMotion()) {
+      this.scene.restart();
+      return;
+    }
     this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => this.scene.restart());
     this.cameras.main.fadeOut(170, 18, 16, 27);
   }
 
   create() {
-    this.cameras.main.fadeIn(170, 18, 16, 27);
+    if (!prefersReducedMotion()) this.cameras.main.fadeIn(170, 18, 16, 27);
     ensureWorldTextures(this);
     this.drawMap();
     this.keys = this.input.keyboard!.createCursorKeys();
     this.interact = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.E);
     this.soundToggle = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.M);
+    this.motionToggle = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.R);
     this.dodge = new DodgePhase(this, this.keys, this.submit);
     this.cameras.main.setBounds(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
     this.cameras.main.startFollow(this.player, true, 0.12, 0.12);
     this.cameras.main.setZoom(1.2);
     this.add.text(12, 10, "FOGBOUND MOOR", { fontFamily: "monospace", fontSize: "16px", color: "#f4deb0" }).setScrollFactor(0).setDepth(20);
-    this.add.text(12, 32, "ARROWS: WALK   E: INTERACT   M: SOUND", { fontFamily: "monospace", fontSize: "10px", color: "#b6a37c" }).setScrollFactor(0).setDepth(20);
+    this.add.text(12, 32, "ARROWS: WALK   E: INTERACT   M: SOUND   R: MOTION", { fontFamily: "monospace", fontSize: "10px", color: "#b6a37c" }).setScrollFactor(0).setDepth(20);
     this.soundStatus = this.add.text(700, 10, isMuted() ? "MUTED" : "SOUND", { fontFamily: "monospace", fontSize: "10px", color: "#b6a37c" }).setOrigin(1, 0).setScrollFactor(0).setDepth(20);
+    this.motionStatus = this.add.text(700, 24, prefersReducedMotion() ? "LOW MOTION" : "MOTION", { fontFamily: "monospace", fontSize: "10px", color: "#b6a37c" }).setOrigin(1, 0).setScrollFactor(0).setDepth(20);
     this.prompt = this.add.text(VIEW_WIDTH / 2, VIEW_HEIGHT - 34, "", { fontFamily: "monospace", fontSize: "13px", color: "#ffffff", backgroundColor: "#211b2c", padding: { x: 8, y: 5 } }).setOrigin(0.5).setScrollFactor(0).setDepth(20);
     if (this.expedition.combat?.status === "active") this.openBattle();
     else if (this.expedition.combat?.status === "victory" || this.expedition.combat?.status === "defeat") this.openCombatOutcome();
@@ -62,6 +71,7 @@ export class OverworldScene extends Phaser.Scene {
 
   update() {
     if (Phaser.Input.Keyboard.JustDown(this.soundToggle)) this.soundStatus.setText(toggleMuted() ? "MUTED" : "SOUND");
+    if (Phaser.Input.Keyboard.JustDown(this.motionToggle)) this.motionStatus.setText(toggleReducedMotion() ? "LOW MOTION" : "MOTION");
     if (this.dodge.active) {
       this.dodge.update();
       return;
@@ -175,8 +185,11 @@ export class OverworldScene extends Phaser.Scene {
     const roleColor = actor === "fighter" ? 0xc95b4f : actor === "mage" ? 0x7561c7 : actor === "support" ? 0x58a98a : 0x7b3140;
     const announcement = this.add.text(VIEW_WIDTH / 2, 300, `${actor.toUpperCase()} — ${label}!`, { fontFamily: "monospace", fontSize: "18px", color: "#ffffff", backgroundColor: `#${roleColor.toString(16).padStart(6, "0")}`, padding: { x: 12, y: 8 } }).setOrigin(0.5).setDepth(40).setScrollFactor(0);
     const burst = Array.from({ length: 8 }, (_, index) => this.add.circle(VIEW_WIDTH / 2, 210, 4, roleColor).setDepth(39).setScrollFactor(0));
-    burst.forEach((spark, index) => this.tweens.add({ targets: spark, x: spark.x + Math.cos(index * Math.PI / 4) * 70, y: spark.y + Math.sin(index * Math.PI / 4) * 45, alpha: 0, duration: 360, onComplete: () => spark.destroy() }));
-    this.tweens.add({ targets: announcement, scaleX: 1.12, scaleY: 1.12, duration: 160, yoyo: true });
+    if (prefersReducedMotion()) burst.forEach((spark) => spark.destroy());
+    else {
+      burst.forEach((spark, index) => this.tweens.add({ targets: spark, x: spark.x + Math.cos(index * Math.PI / 4) * 70, y: spark.y + Math.sin(index * Math.PI / 4) * 45, alpha: 0, duration: 360, onComplete: () => spark.destroy() }));
+      this.tweens.add({ targets: announcement, scaleX: 1.12, scaleY: 1.12, duration: 160, yoyo: true });
+    }
     this.time.delayedCall(430, () => {
       announcement.destroy();
       this.beginDodgePhase(action);

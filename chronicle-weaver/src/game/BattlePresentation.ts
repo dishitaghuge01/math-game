@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import type { ExpeditionState } from "@/api/gameApi";
 import { playCue } from "./AudioCue";
+import { prefersReducedMotion } from "./Settings";
 import type { ExpeditionAction } from "./types";
 
 const WIDTH = 768;
@@ -16,7 +17,7 @@ export function openBattlePresentation(scene: Phaser.Scene, expedition: Expediti
     : enemyVariant === 1
       ? scene.add.triangle(WIDTH / 2, 154, 0, 72, 38, 0, 76, 72, 0x7159a8).setStrokeStyle(4, 0xf4deb0)
       : scene.add.circle(WIDTH / 2, 154, 42, 0x4d8c88).setStrokeStyle(4, 0xf4deb0);
-  scene.tweens.add({ targets: enemyBody, y: 148, duration: 700, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
+  if (!prefersReducedMotion()) scene.tweens.add({ targets: enemyBody, y: 148, duration: 700, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
   overlay.add(enemyBody);
   const eyeColor = enemyVariant === 0 ? 0xf4deb0 : enemyVariant === 1 ? 0x9bd3dc : 0xffcf70;
   overlay.add(scene.add.circle(WIDTH / 2 - 11, 148, 4, eyeColor));
@@ -34,7 +35,8 @@ export function openBattlePresentation(scene: Phaser.Scene, expedition: Expediti
     const targetX = latestLog.includes("strikes") ? 620 : WIDTH / 2;
     const targetY = latestLog.includes("strikes") ? 268 : 126;
     const number = scene.add.text(targetX, targetY, `-${damage}`, { fontFamily: "monospace", fontSize: "24px", color: "#ff8592", stroke: "#251d2a", strokeThickness: 4 }).setOrigin(0.5);
-    scene.tweens.add({ targets: number, y: targetY - 34, alpha: 0, duration: 750, onComplete: () => number.destroy() });
+    if (prefersReducedMotion()) number.setAlpha(0);
+    else scene.tweens.add({ targets: number, y: targetY - 34, alpha: 0, duration: 750, onComplete: () => number.destroy() });
     overlay.add(number);
   }
   (["STRIKE", "GUARD", "SIGNATURE", "ITEM", "RETREAT"] as const).forEach((label, index) => {
