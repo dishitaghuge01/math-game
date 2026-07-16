@@ -93,7 +93,11 @@ export class OverworldScene extends Phaser.Scene {
     const traits = Object.entries(this.expedition.traits)
       .filter(([key, trait]) => trait.tier !== this.previousExpedition!.traits[key as keyof ExpeditionState["traits"]].tier)
       .map(([key]) => key.toUpperCase());
-    const messages = [gold > 0 ? `+${gold} GOLD` : "", experience > 0 ? `+${experience} XP` : "", traits.length ? `${traits.join(" / ")} SHIFTED` : ""].filter(Boolean);
+    const bonds = this.expedition.party
+      .map((member) => ({ name: member.name, delta: member.bond - (this.previousExpedition!.party.find((previous) => previous.role === member.role)?.bond ?? member.bond) }))
+      .filter(({ delta }) => delta !== 0)
+      .map(({ name, delta }) => `${name.toUpperCase()} BOND ${delta > 0 ? "+" : ""}${delta}`);
+    const messages = [gold > 0 ? `+${gold} GOLD` : "", experience > 0 ? `+${experience} XP` : "", traits.length ? `${traits.join(" / ")} SHIFTED` : "", ...bonds].filter(Boolean);
     this.previousExpedition = undefined;
     if (!messages.length) return;
     const toast = this.add.text(VIEW_WIDTH / 2, 82, messages.join("  "), { fontFamily: "monospace", fontSize: "13px", color: "#f4deb0", backgroundColor: "#30283a", padding: { x: 10, y: 7 } }).setOrigin(0.5).setScrollFactor(0).setDepth(50);
