@@ -18,6 +18,9 @@ export function openBattlePresentation(scene: Phaser.Scene, expedition: Expediti
       : scene.add.circle(WIDTH / 2, 154, 42, 0x4d8c88).setStrokeStyle(4, 0xf4deb0);
   scene.tweens.add({ targets: enemyBody, y: 148, duration: 700, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
   overlay.add(enemyBody);
+  const eyeColor = enemyVariant === 0 ? 0xf4deb0 : enemyVariant === 1 ? 0x9bd3dc : 0xffcf70;
+  overlay.add(scene.add.circle(WIDTH / 2 - 11, 148, 4, eyeColor));
+  overlay.add(scene.add.circle(WIDTH / 2 + 11, 148, 4, eyeColor));
   overlay.add(scene.add.text(WIDTH / 2, 212, `${enemy.name}\nHP ${enemy.health}/${enemy.maxHealth}${enemy.weakened ? "  WEAK" : ""}`, { fontFamily: "monospace", fontSize: "16px", color: "#f4deb0", align: "center" }).setOrigin(0.5));
   overlay.add(scene.add.text(WIDTH / 2, 264, `${expedition.combat!.activeMemberRole.toUpperCase()}'S TURN`, { fontFamily: "monospace", fontSize: "13px", color: "#ffffff" }).setOrigin(0.5));
   expedition.party.forEach((member, index) => overlay.add(scene.add.text(24, 290 + index * 18, `${member.role.toUpperCase().padEnd(7)} ${member.health}/${member.maxHealth}${member.shield ? `  ◈${member.shield}` : ""}`, { fontFamily: "monospace", fontSize: "11px", color: member.health > 0 ? "#f4deb0" : "#a84949" })));
