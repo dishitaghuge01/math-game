@@ -1,125 +1,185 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { fetchMechanics, fetchWorld } from "@/api/gameApi";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { fetchRpgGame, postRpgAction, type RpgGameState } from "@/api/gameApi";
 import { useGameStore } from "@/store/gameStore";
-import { Loader2, MapPin, Skull, Sparkle } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  ChevronUp,
+  Crosshair,
+  Heart,
+  Shield,
+  Sparkles,
+} from "lucide-react";
 
-export const Route = createFileRoute("/world")({
-  component: WorldPage,
-});
+export const Route = createFileRoute("/world")({ component: WorldPage });
 
-const TERRAIN_LABELS = ["mist", "moor", "wold", "peak"];
+const terrain = ["mist", "moor", "forest", "crag"];
+const terrainClass = ["bg-[#b8b08c]", "bg-[#879757]", "bg-[#416e48]", "bg-[#4b5264]"];
+
+type Direction = "north" | "south" | "east" | "west";
 
 function WorldPage() {
-  const currentNodeId = useGameStore((s) => s.currentNodeId);
-  const chunkId = currentNodeId ?? "default";
-
-  const worldQuery = useQuery({
-    queryKey: ["world", chunkId],
-    queryFn: () => fetchWorld(chunkId),
-  });
-  const mechanicsQuery = useQuery({
-    queryKey: ["mechanics", chunkId],
-    queryFn: () => fetchMechanics(1),
+  const queryClient = useQueryClient();
+  const palette = useGameStore((s) => s.palette);
+  const gameQuery = useQuery({ queryKey: ["rpg-game"], queryFn: fetchRpgGame });
+  const action = useMutation({
+    mutationFn: postRpgAction,
+    onSuccess: (game) => queryClient.setQueryData(["rpg-game"], game),
   });
 
-  if (worldQuery.isLoading) {
+  if (gameQuery.isLoading || !gameQuery.data)
     return (
-      <div className="min-h-[60vh] flex items-center justify-center">
-        <div className="parchment-card p-12 text-center">
-          <Loader2 className="w-8 h-8 mx-auto mb-4 animate-spin text-[color:var(--color-ember)]" />
-          <p className="font-hand italic">The cartographer sketches thy surroundings…</p>
-        </div>
+      <div className="min-h-[60vh] grid place-items-center font-hand italic">
+        Drawing the wilds…
       </div>
     );
-  }
-  if (worldQuery.isError || !worldQuery.data) {
+  if (gameQuery.isError)
     return (
-      <div className="min-h-[60vh] flex items-center justify-center">
-        <div className="parchment-card p-10 max-w-md text-center">
-          <p className="font-body italic">The map is smudged beyond reading.</p>
-          <button
-            onClick={() => worldQuery.refetch()}
-            className="mt-4 px-4 py-2 bg-[color:var(--color-ember)] text-[color:var(--color-parchment)] font-heading uppercase text-xs tracking-wider"
-          >
-            Redraw
-          </button>
-        </div>
+      <div className="min-h-[60vh] grid place-items-center font-hand italic">
+        The road cannot be found. Start the game server and try again.
       </div>
     );
-  }
 
-  const world = worldQuery.data;
+  const game = gameQuery.data;
+  const move = (direction: Direction) => action.mutate({ type: "move", direction });
+  const combat = (choice: "attack" | "defend" | "use-potion") =>
+    action.mutate({ type: "combat", action: choice });
 
   return (
-    <div className="max-w-6xl mx-auto px-6 py-10">
-      <header className="text-center mb-8">
-        <div className="font-hand italic text-sm text-[color:var(--color-ink-soft)]">
-          — herein lies —
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-7">
+      <header className="flex flex-wrap justify-between items-end gap-3 mb-5">
+        <div>
+          <p className="font-hand italic text-sm text-[color:var(--color-ink-soft)]">
+            — playable vertical slice —
+          </p>
+          <h1 className="font-display text-3xl sm:text-4xl">The Fogbound Moor</h1>
         </div>
-        <h1 className="font-display text-4xl md:text-5xl mt-1">{world.locationName || "The Wilds"}</h1>
-        <div className="mt-2 inline-flex items-center gap-2 font-heading text-xs tracking-widest uppercase text-[color:var(--color-ink-soft)]">
-          <MapPin className="w-3.5 h-3.5" />
-          Ye stand at {world.currentPosition.row},{world.currentPosition.col}
+        <div className="flex gap-3 font-heading text-xs uppercase tracking-widest">
+          <span className="parchment-card px-3 py-2">✦ {game.experience} XP</span>
+          <span className="parchment-card px-3 py-2 text-[color:var(--color-gold-deep)]">
+            ◉ {game.gold} gold
+          </span>
         </div>
       </header>
 
-      <div className="grid gap-8 lg:grid-cols-[1fr_320px]">
-        <div className="parchment-card p-6">
-          <MapGrid world={world} />
-          <Legend />
-        </div>
-        <aside className="space-y-6">
-          <EncounterCard mechanics={mechanicsQuery.data} loading={mechanicsQuery.isLoading} />
-          <LootCard mechanics={mechanicsQuery.data} loading={mechanicsQuery.isLoading} />
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <section className="parchment-card p-3 sm:p-5">
+          <Map game={game} onMove={move} disabled={action.isPending} />
+          <div className="mt-5 grid grid-cols-[1fr_auto_1fr] items-center gap-1 max-w-[200px] mx-auto">
+            <span />
+            <MoveButton
+              label="Travel north"
+              onClick={() => move("north")}
+              disabled={action.isPending}
+              icon={<ChevronUp />}
+            />
+            <span />
+            <MoveButton
+              label="Travel west"
+              onClick={() => move("west")}
+              disabled={action.isPending}
+              icon={<ChevronLeft />}
+            />
+            <MoveButton
+              label="Travel south"
+              onClick={() => move("south")}
+              disabled={action.isPending}
+              icon={<ChevronDown />}
+            />
+            <MoveButton
+              label="Travel east"
+              onClick={() => move("east")}
+              disabled={action.isPending}
+              icon={<ChevronRight />}
+            />
+          </div>
+          <p className="text-center mt-4 font-hand italic text-sm text-[color:var(--color-ink-soft)]">
+            Move one tile at a time. Fog lifts around your path.
+          </p>
+        </section>
+
+        <aside className="space-y-5">
+          <PlayerCard game={game} palette={palette} />
+          {game.combat?.status === "active" ? (
+            <CombatCard game={game} onAction={combat} busy={action.isPending} />
+          ) : (
+            <LogCard lines={game.log} />
+          )}
+          {game.combat?.status === "victory" && (
+            <LogCard lines={["The path is clear. Continue exploring.", ...game.log]} />
+          )}
+          {game.combat?.status === "defeat" && (
+            <button
+              className="w-full parchment-card p-5 font-heading uppercase tracking-widest text-sm"
+              onClick={() => action.mutate({ type: "reset" })}
+            >
+              Begin anew
+            </button>
+          )}
         </aside>
       </div>
     </div>
   );
 }
 
-function MapGrid({
-  world,
+function Map({
+  game,
+  onMove,
+  disabled,
 }: {
-  world: { grid: number[][]; revealed: boolean[][]; currentPosition: { row: number; col: number } };
+  game: RpgGameState;
+  onMove: (direction: Direction) => void;
+  disabled: boolean;
 }) {
-  const terrainColor = (tier: number) => {
-    const colors = [
-      "oklch(0.78 0.05 82)", // mist / low
-      "oklch(0.65 0.09 105)", // moor
-      "oklch(0.5 0.09 145)", // wold
-      "oklch(0.4 0.05 260)", // peak
-    ];
-    return colors[Math.max(0, Math.min(3, tier))];
-  };
   return (
     <div
-      className="grid gap-[2px] ink-border p-2 aspect-square"
-      style={{
-        gridTemplateColumns: `repeat(${world.grid[0]?.length ?? 16}, minmax(0, 1fr))`,
-        background: "oklch(0.2 0.02 40)",
-      }}
+      className="grid gap-px rounded-sm overflow-hidden border-2 border-[color:var(--color-ink)]/50 bg-[color:var(--color-ink)]/50 aspect-square"
+      style={{ gridTemplateColumns: `repeat(${game.grid[0].length}, minmax(0, 1fr))` }}
     >
-      {world.grid.map((row, r) =>
-        row.map((tier, c) => {
-          const revealed = world.revealed[r]?.[c];
-          const isHere = world.currentPosition.row === r && world.currentPosition.col === c;
+      {game.grid.flatMap((row, r) =>
+        row.map((tile, c) => {
+          const revealed = game.revealed[r][c];
+          const here = game.position.row === r && game.position.col === c;
+          const direction =
+            r === game.position.row - 1 && c === game.position.col
+              ? "north"
+              : r === game.position.row + 1 && c === game.position.col
+                ? "south"
+                : r === game.position.row && c === game.position.col - 1
+                  ? "west"
+                  : r === game.position.row && c === game.position.col + 1
+                    ? "east"
+                    : null;
           return (
-            <div
+            <button
               key={`${r}-${c}`}
-              title={revealed ? `${TERRAIN_LABELS[tier]} (${r},${c})` : "unknown"}
-              className="relative"
-              style={{
-                background: revealed ? terrainColor(tier) : "oklch(0.15 0.02 40)",
-                boxShadow: revealed ? "inset 0 0 4px rgba(40,20,5,0.35)" : "none",
-              }}
+              disabled={!direction || disabled || game.combat?.status === "active"}
+              onClick={() => direction && onMove(direction)}
+              aria-label={
+                here ? "Current position" : revealed ? `Travel to ${terrain[tile]}` : "Unexplored"
+              }
+              className={`relative min-w-0 aspect-square ${revealed ? terrainClass[tile] : "bg-[#202329]"} ${direction ? "hover:brightness-125 cursor-pointer" : "cursor-default"}`}
             >
-              {isHere && (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-full h-full wax-seal torchlight" />
-                </div>
+              {revealed && (
+                <span
+                  className="absolute inset-0 opacity-25"
+                  style={{
+                    backgroundImage:
+                      "repeating-linear-gradient(45deg, transparent 0 5px, rgba(25,30,20,.22) 5px 6px)",
+                  }}
+                />
               )}
-            </div>
+              {here && (
+                <span className="absolute inset-0 grid place-items-center">
+                  <Shield
+                    className="w-3/5 h-3/5 text-[#f5df91] drop-shadow-[0_2px_1px_rgba(0,0,0,.8)]"
+                    fill="currentColor"
+                  />
+                </span>
+              )}
+            </button>
           );
         }),
       )}
@@ -127,99 +187,122 @@ function MapGrid({
   );
 }
 
-function Legend() {
+function PlayerCard({ game, palette }: { game: RpgGameState; palette: string[] }) {
+  const player = game.combat?.player ?? { name: "Wayfarer", health: 20, maxHealth: 20, attack: 6 };
   return (
-    <div className="mt-4 flex flex-wrap items-center justify-center gap-4 text-xs font-hand italic text-[color:var(--color-ink-soft)]">
-      {TERRAIN_LABELS.map((t, i) => (
-        <span key={t} className="flex items-center gap-1.5">
-          <span
-            className="inline-block w-3 h-3 ink-border"
-            style={{
-              background: ["oklch(0.78 0.05 82)", "oklch(0.65 0.09 105)", "oklch(0.5 0.09 145)", "oklch(0.4 0.05 260)"][i],
-            }}
-          />
-          {t}
+    <div className="parchment-card p-5">
+      <div className="flex items-center gap-3">
+        <div
+          className="w-11 h-11 grid place-items-center rounded-full ink-border"
+          style={{ background: `linear-gradient(135deg, ${palette.join(",")})` }}
+        >
+          <Shield className="text-white" />
+        </div>
+        <div>
+          <h2 className="font-display text-xl">Wayfarer</h2>
+          <p className="font-hand italic text-sm">Moor scout · attack {player.attack}</p>
+        </div>
+      </div>
+      <Health label="Vitality" current={player.health} max={player.maxHealth} />
+    </div>
+  );
+}
+
+function CombatCard({
+  game,
+  onAction,
+  busy,
+}: {
+  game: RpgGameState;
+  onAction: (action: "attack" | "defend" | "use-potion") => void;
+  busy: boolean;
+}) {
+  const combat = game.combat!;
+  return (
+    <div className="parchment-card p-5 border-2 border-[color:var(--color-blood)]/50">
+      <div className="flex items-center gap-2 mb-3 text-[color:var(--color-blood)]">
+        <Crosshair className="w-4 h-4" />
+        <h2 className="font-heading text-sm uppercase tracking-widest">Encounter</h2>
+      </div>
+      <h3 className="font-display text-2xl">{combat.enemy.name}</h3>
+      <Health label="Enemy vitality" current={combat.enemy.health} max={combat.enemy.maxHealth} />
+      <div className="grid grid-cols-3 gap-2 mt-5">
+        {(
+          [
+            ["attack", "Strike"],
+            ["defend", "Guard"],
+            ["use-potion", `Potion (${combat.potions})`],
+          ] as const
+        ).map(([action, label]) => (
+          <button
+            key={action}
+            disabled={busy || (action === "use-potion" && combat.potions === 0)}
+            onClick={() => onAction(action)}
+            className="py-3 px-1 bg-[color:var(--color-ink)] text-[color:var(--color-parchment)] font-heading text-[10px] uppercase tracking-wider hover:bg-[color:var(--color-ember)] disabled:opacity-50"
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function Health({ label, current, max }: { label: string; current: number; max: number }) {
+  return (
+    <div className="mt-4">
+      <div className="flex justify-between font-hand italic text-xs">
+        <span>{label}</span>
+        <span>
+          {current}/{max}
         </span>
-      ))}
-      <span className="flex items-center gap-1.5">
-        <span className="inline-block w-3 h-3 rounded-full wax-seal" /> thou
-      </span>
+      </div>
+      <div className="h-2 mt-1 bg-[color:var(--color-ink)]/15">
+        <div
+          className="h-full bg-[color:var(--color-blood)]"
+          style={{ width: `${(current / max) * 100}%` }}
+        />
+      </div>
     </div>
   );
 }
-
-function EncounterCard({
-  mechanics,
-  loading,
-}: {
-  mechanics: { enemyStats: { health: number; count: number } } | undefined;
-  loading: boolean;
-}) {
+function LogCard({ lines }: { lines: string[] }) {
   return (
     <div className="parchment-card p-5">
-      <div className="flex items-center gap-2 mb-3">
-        <Skull className="w-4 h-4 text-[color:var(--color-blood)]" />
-        <h3 className="font-heading uppercase tracking-widest text-sm">Foes Sighted</h3>
+      <div className="flex gap-2 items-center mb-3">
+        <Sparkles className="w-4 h-4 text-[color:var(--color-gold-deep)]" />
+        <h2 className="font-heading text-sm uppercase tracking-widest">Travel log</h2>
       </div>
-      {loading || !mechanics ? (
-        <p className="font-hand italic text-sm text-[color:var(--color-ink-soft)]">Scouts still returning…</p>
-      ) : (
-        <div className="space-y-2">
-          <Stat label="Enemies" value={String(mechanics.enemyStats.count)} />
-          <Stat label="Vitality each" value={String(mechanics.enemyStats.health)} />
-        </div>
-      )}
-    </div>
-  );
-}
-
-function LootCard({
-  mechanics,
-  loading,
-}: {
-  mechanics: { lootWeights: Record<string, number> } | undefined;
-  loading: boolean;
-}) {
-  const rarityColor: Record<string, string> = {
-    common: "oklch(0.55 0.03 80)",
-    rare: "oklch(0.55 0.14 240)",
-    legendary: "oklch(0.7 0.18 60)",
-  };
-  return (
-    <div className="parchment-card p-5">
-      <div className="flex items-center gap-2 mb-3">
-        <Sparkle className="w-4 h-4 text-[color:var(--color-gold-deep)]" />
-        <h3 className="font-heading uppercase tracking-widest text-sm">The Hoard</h3>
-      </div>
-      {loading || !mechanics ? (
-        <p className="font-hand italic text-sm text-[color:var(--color-ink-soft)]">The chests are yet to open…</p>
-      ) : (
-        <div className="space-y-3">
-          {Object.entries(mechanics.lootWeights).map(([rarity, w]) => (
-            <div key={rarity}>
-              <div className="flex justify-between text-xs font-heading uppercase tracking-wider mb-1">
-                <span>{rarity}</span>
-                <span>{Math.round(w * 100)}%</span>
-              </div>
-              <div className="h-2 ink-border bg-[color:var(--color-parchment-dark)] overflow-hidden">
-                <div
-                  className="h-full torchlight"
-                  style={{ width: `${w * 100}%`, background: rarityColor[rarity] ?? "gray" }}
-                />
-              </div>
-            </div>
+      <ol className="space-y-2 font-hand italic text-sm text-[color:var(--color-ink-soft)]">
+        {lines
+          .slice()
+          .reverse()
+          .map((line, i) => (
+            <li key={`${line}-${i}`}>{line}</li>
           ))}
-        </div>
-      )}
+      </ol>
     </div>
   );
 }
-
-function Stat({ label, value }: { label: string; value: string }) {
+function MoveButton({
+  label,
+  onClick,
+  disabled,
+  icon,
+}: {
+  label: string;
+  onClick: () => void;
+  disabled: boolean;
+  icon: React.ReactNode;
+}) {
   return (
-    <div className="flex justify-between border-b border-[color:var(--color-ink)]/15 pb-1 last:border-0">
-      <span className="font-hand italic text-sm text-[color:var(--color-ink-soft)]">{label}</span>
-      <span className="font-heading text-sm">{value}</span>
-    </div>
+    <button
+      aria-label={label}
+      onClick={onClick}
+      disabled={disabled}
+      className="w-12 h-10 grid place-items-center parchment-card hover:text-[color:var(--color-ember)] disabled:opacity-40"
+    >
+      {icon}
+    </button>
   );
 }
