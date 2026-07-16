@@ -165,7 +165,7 @@ export class OverworldScene extends Phaser.Scene {
 
   private beginDodgePhase(action: ExpeditionAction) {
     this.actionSelecting = false;
-    this.dodge.begin(action, this.expedition.worldSeed);
+    this.dodge.begin(action, `${this.expedition.worldSeed}:${this.expedition.combat?.enemy.name ?? "fog"}`);
   }
 
   private openCombatOutcome() {

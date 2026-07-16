@@ -10,7 +10,7 @@ export function openBattlePresentation(scene: Phaser.Scene, expedition: Expediti
   const enemy = expedition.combat!.enemy;
   const overlay = scene.add.container(0, 0).setDepth(30).setScrollFactor(0);
   overlay.add(scene.add.rectangle(WIDTH / 2, HEIGHT / 2, WIDTH, HEIGHT, 0x12111b, 0.96));
-  const enemyVariant = expedition.worldSeed % 3;
+  const enemyVariant = [...enemy.name].reduce((total, character) => (total * 31 + character.charCodeAt(0)) >>> 0, 0) % 3;
   const enemyBody = enemyVariant === 0
     ? scene.add.rectangle(WIDTH / 2, 154, 76, 76, 0x9f4851).setStrokeStyle(4, 0xf4deb0)
     : enemyVariant === 1

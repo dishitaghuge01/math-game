@@ -88,7 +88,8 @@ export function travelToLocation(expeditionId: string, destinationId: string): E
   destination.revealed = true;
   if (destination.type === 'camp') state.region.campLocationId = destinationId;
   if (destination.type === 'combat') {
-    state.combat = { status: 'active', enemy: { name: 'Fogbound Revenant', health: 18, maxHealth: 18, weakened: 0 }, activeMemberRole: 'fighter', log: ['A Fogbound Revenant bars the road.'] };
+    const enemy = createCombatEnemy(state.worldSeed, destination.id);
+    state.combat = { status: 'active', enemy: { ...enemy, weakened: 0 }, activeMemberRole: 'fighter', log: [`A ${enemy.name} bars the road.`] };
   }
   for (const neighborId of destination.connectedTo) {
     const neighbor = state.region.locations.find((location) => location.id === neighborId);
@@ -286,6 +287,17 @@ function createRegion(seed: number): ExpeditionState['region'] {
     locations[index + 1].connectedTo.push(locations[index].id);
   }
   return { name: 'The Fogbound Moor', currentLocationId: locations[0].id, campLocationId: locations[0].id, rivalAdvanced: false, locations };
+}
+
+function createCombatEnemy(seed: number, locationId: string): { name: string; health: number; maxHealth: number } {
+  const variants = [
+    { name: 'Fogbound Revenant', health: 18 },
+    { name: 'Moorlight Wisp', health: 14 },
+    { name: 'Ashen Rook', health: 22 },
+  ];
+  const locationOffset = [...locationId].reduce((total, character) => total + character.charCodeAt(0), 0);
+  const variant = variants[seededIndex(seed, locationOffset, variants.length)];
+  return { name: variant.name, health: variant.health, maxHealth: variant.health };
 }
 
 function recoverPartyAtCamp(state: ExpeditionState): void {

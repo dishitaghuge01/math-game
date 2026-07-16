@@ -20,7 +20,7 @@ export class DodgePhase {
 
   get active() { return this.action !== null; }
 
-  begin(action: ExpeditionAction, worldSeed: number) {
+  begin(action: ExpeditionAction, patternKey: string) {
     this.action = action;
     this.hits = 0;
     this.invulnerableUntil = 0;
@@ -29,7 +29,7 @@ export class DodgePhase {
     this.scene.add.text(WIDTH / 2, 120, "DODGE THE FOG", { fontFamily: "monospace", fontSize: "16px", color: "#f4deb0" }).setOrigin(0.5).setDepth(32).setScrollFactor(0);
     this.soul = this.scene.add.rectangle(WIDTH / 2, HEIGHT / 2, 12, 12, 0xff4f6d).setDepth(32).setScrollFactor(0);
     this.bullets = this.scene.add.group();
-    const pattern = worldSeed % 3;
+    const pattern = [...patternKey].reduce((total, character) => (total * 31 + character.charCodeAt(0)) >>> 0, 0) % 3;
     const spawn = this.scene.time.addEvent({ delay: pattern === 2 ? 180 : 260, repeat: pattern === 1 ? 16 : 11, callback: () => this.spawnProjectile(pattern) });
     this.scene.time.delayedCall(3300, () => {
       spawn.remove(false);
