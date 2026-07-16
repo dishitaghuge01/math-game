@@ -48,6 +48,7 @@ class OverworldScene extends Phaser.Scene {
   private readonly expedition: ExpeditionState;
   private readonly submit: Props["onAction"];
   private player!: Phaser.Physics.Arcade.Sprite;
+  private followers: Phaser.GameObjects.Sprite[] = [];
   private keys!: Phaser.Types.Input.Keyboard.CursorKeys;
   private interact!: Phaser.Input.Keyboard.Key;
   private prompt!: Phaser.GameObjects.Text;
@@ -95,6 +96,11 @@ class OverworldScene extends Phaser.Scene {
     if (this.keys.up.isDown) body.setVelocityY(-speed);
     if (this.keys.down.isDown) body.setVelocityY(speed);
     body.velocity.normalize().scale(speed);
+    this.followers.forEach((follower, index) => {
+      const leader = index === 0 ? this.player : this.followers[index - 1];
+      follower.x = Phaser.Math.Linear(follower.x, leader.x - 18, 0.09);
+      follower.y = Phaser.Math.Linear(follower.y, leader.y + 8, 0.09);
+    });
 
     const target = this.nearbyReachableLandmark();
     this.prompt.setText(target ? `[E] Travel to ${this.locationName(target.id)}` : "");
@@ -130,6 +136,8 @@ class OverworldScene extends Phaser.Scene {
     this.player = this.physics.add.sprite(128, WORLD_HEIGHT - 128, "party-leader").setDepth(5);
     this.player.setCollideWorldBounds(true).setSize(12, 12).setOffset(2, 6);
     this.physics.add.collider(this.player, walls);
+    this.followers = this.expedition.party.slice(1).map((member, index) => this.add.sprite(104 - index * 18, WORLD_HEIGHT - 120, "party-leader").setTint(index === 0 ? 0x9fd6ff : 0xdca5e8).setDepth(4));
+    this.add.text(12, 54, this.expedition.party.map((member) => `${member.name} ${member.health}/${member.maxHealth}`).join("  "), { fontFamily: "monospace", fontSize: "10px", color: "#f4deb0" }).setScrollFactor(0).setDepth(20);
 
     const visible = this.expedition.region.locations.filter((location) => location.revealed || location.id === current);
     const positions = [[160, 160], [550, 180], [970, 220], [1320, 340], [1050, 660], [600, 640], [200, 580]];
