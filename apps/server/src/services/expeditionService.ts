@@ -77,6 +77,22 @@ export function travelToLocation(expeditionId: string, destinationId: string): E
   return state;
 }
 
+export function resolveDiscovery(expeditionId: string, choice: 'search' | 'press-on'): ExpeditionState {
+  const state = loadExpedition(expeditionId);
+  if (!state) throw Object.assign(new Error('Expedition not found'), { status: 404 });
+  const location = state.region.locations.find((entry) => entry.id === state.region.currentLocationId);
+  if (location?.type !== 'discovery') throw Object.assign(new Error('No Discovery Encounter at this location'), { status: 400 });
+  if (choice === 'search') {
+    state.resources.gold += 3;
+    state.traits.curiosity = { tier: 'awakening', recentShift: 'rising' };
+  } else {
+    state.traits.resolve = { tier: 'steadfast', recentShift: 'rising' };
+  }
+  location.type = 'landmark';
+  saveExpedition(state);
+  return state;
+}
+
 export function retreatToCamp(expeditionId: string): ExpeditionState {
   const state = loadExpedition(expeditionId);
   if (!state) throw Object.assign(new Error('Expedition not found'), { status: 404 });
