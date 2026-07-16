@@ -2,6 +2,7 @@ import Phaser from "phaser";
 import { useEffect, useRef } from "react";
 import type { ExpeditionState } from "@/api/gameApi";
 import { openCampPresentation, openEndingPresentation } from "./ConclusionPresentation";
+import { openEncounterDialogue } from "./DialoguePresentation";
 import type { ExpeditionAction, ExpeditionGameProps } from "./types";
 
 const VIEW_WIDTH = 768;
@@ -91,7 +92,7 @@ class OverworldScene extends Phaser.Scene {
     this.prompt = this.add.text(VIEW_WIDTH / 2, VIEW_HEIGHT - 34, "", { fontFamily: "monospace", fontSize: "13px", color: "#ffffff", backgroundColor: "#211b2c", padding: { x: 8, y: 5 } }).setOrigin(0.5).setScrollFactor(0).setDepth(20);
     if (this.expedition.combat?.status === "active") this.openBattle();
     else if (this.expedition.combat?.status === "victory" || this.expedition.combat?.status === "defeat") this.openCombatOutcome();
-    else this.openEncounterDialogue();
+    else this.battleOpen = openEncounterDialogue(this, this.expedition, this.submit);
   }
 
   update() {
@@ -181,53 +182,6 @@ class OverworldScene extends Phaser.Scene {
 
   private locationName(id: string) {
     return this.expedition.region.locations.find((location) => location.id === id)?.name ?? "the road";
-  }
-
-  private openEncounterDialogue() {
-    const current = this.expedition.region.locations.find((location) => location.id === this.expedition.region.currentLocationId)!;
-    if (current.type !== "discovery" && current.type !== "social") return;
-    this.battleOpen = true;
-    const social = current.type === "social";
-    const speaker = social ? this.expedition.party[2] : this.expedition.party[1];
-    const title = social ? "PILGRIM LANTERNS" : current.name.toUpperCase();
-    const line = social
-      ? "The distant lanterns split the Party.\nWho carries the burden?"
-      : current.name === "The Splintered Observatory"
-        ? "The broken lens shows two futures.\nWhich road will the Party keep?"
-        : "The water reflects a road that does not yet exist.\nWhat will the Party do?";
-    const choices = social
-      ? [["1. SHARE THE BURDEN", { type: "social", choice: "share" } as const], ["2. COMMAND THE PATH", { type: "social", choice: "command" } as const]]
-      : [["1. SEARCH THE DEPTHS", { type: "discovery", choice: "search" } as const], ["2. PRESS INTO THE FOG", { type: "discovery", choice: "press-on" } as const]];
-    const overlay = this.add.container(0, 0).setDepth(30).setScrollFactor(0);
-    overlay.add(this.add.rectangle(VIEW_WIDTH / 2, VIEW_HEIGHT / 2, VIEW_WIDTH, VIEW_HEIGHT, 0x12111b, 0.94));
-    overlay.add(this.add.rectangle(104, 134, 116, 116, social ? 0x668e75 : 0x5596a3).setStrokeStyle(4, 0xf4deb0));
-    overlay.add(this.add.rectangle(104, 134, 42, 56, social ? 0xdca5e8 : 0x9fd6ff).setStrokeStyle(2, 0x251d2a));
-    overlay.add(this.add.text(182, 58, `${speaker.name.toUpperCase()} — ${speaker.role.toUpperCase()}`, { fontFamily: "monospace", fontSize: "11px", color: "#b6a37c" }));
-    overlay.add(this.add.text(182, 78, title, { fontFamily: "monospace", fontSize: "18px", color: "#f4deb0" }));
-    overlay.add(this.addTypewriterText(182, 116, line));
-    choices.forEach(([label, action], index) => {
-      const option = this.add.text(180, 250 + index * 48, label, { fontFamily: "monospace", fontSize: "15px", color: "#f4deb0", backgroundColor: "#30283a", padding: { x: 10, y: 8 } }).setInteractive({ useHandCursor: true });
-      option.on("pointerdown", () => this.submit(action));
-      overlay.add(option);
-      this.input.keyboard!.once(index === 0 ? "keydown-ONE" : "keydown-TWO", () => this.submit(action));
-    });
-    overlay.add(this.add.text(VIEW_WIDTH / 2, 390, "PRESS 1 OR 2", { fontFamily: "monospace", fontSize: "11px", color: "#b6a37c" }).setOrigin(0.5));
-  }
-
-  private addTypewriterText(x: number, y: number, line: string) {
-    const text = this.add.text(x, y, "", { fontFamily: "monospace", fontSize: "14px", color: "#ffffff", lineSpacing: 8 });
-    let cursor = 0;
-    const reveal = () => {
-      cursor += 1;
-      text.setText(line.slice(0, cursor));
-      if (cursor >= line.length) timer.remove(false);
-    };
-    const timer = this.time.addEvent({ delay: 18, repeat: line.length - 1, callback: reveal });
-    this.input.keyboard!.once("keydown-SPACE", () => {
-      timer.remove(false);
-      text.setText(line);
-    });
-    return text;
   }
 
   private openBattle() {
