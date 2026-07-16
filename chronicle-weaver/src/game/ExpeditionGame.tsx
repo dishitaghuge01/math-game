@@ -232,7 +232,14 @@ class OverworldScene extends Phaser.Scene {
     const enemy = this.expedition.combat!.enemy;
     const overlay = this.add.container(0, 0).setDepth(30).setScrollFactor(0);
     overlay.add(this.add.rectangle(VIEW_WIDTH / 2, VIEW_HEIGHT / 2, VIEW_WIDTH, VIEW_HEIGHT, 0x12111b, 0.96));
-    overlay.add(this.add.rectangle(VIEW_WIDTH / 2, 154, 76, 76, 0x9f4851).setStrokeStyle(4, 0xf4deb0));
+    const enemyVariant = this.expedition.worldSeed % 3;
+    const enemyBody = enemyVariant === 0
+      ? this.add.rectangle(VIEW_WIDTH / 2, 154, 76, 76, 0x9f4851).setStrokeStyle(4, 0xf4deb0)
+      : enemyVariant === 1
+        ? this.add.triangle(VIEW_WIDTH / 2, 154, 0, 72, 38, 0, 76, 72, 0x7159a8).setStrokeStyle(4, 0xf4deb0)
+        : this.add.circle(VIEW_WIDTH / 2, 154, 42, 0x4d8c88).setStrokeStyle(4, 0xf4deb0);
+    this.tweens.add({ targets: enemyBody, y: 148, duration: 700, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
+    overlay.add(enemyBody);
     overlay.add(this.add.text(VIEW_WIDTH / 2, 212, `${enemy.name}\nHP ${enemy.health}/${enemy.maxHealth}`, { fontFamily: "monospace", fontSize: "16px", color: "#f4deb0", align: "center" }).setOrigin(0.5));
     overlay.add(this.add.text(VIEW_WIDTH / 2, 264, `${this.expedition.combat!.activeMemberRole.toUpperCase()}'S TURN`, { fontFamily: "monospace", fontSize: "13px", color: "#ffffff" }).setOrigin(0.5));
     this.expedition.party.forEach((member, index) => {
