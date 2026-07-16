@@ -130,7 +130,12 @@ export function resolveCombatAction(expeditionId: string, action: 'basic' | 'gua
   if (!state) throw Object.assign(new Error('Expedition not found'), { status: 404 });
   if (!state.combat || state.combat.status !== 'active') throw Object.assign(new Error('No active Combat Encounter'), { status: 400 });
   const actingRole = state.combat.activeMemberRole;
-  const damage = action === 'signature' ? 7 : action === 'basic' ? 4 : 1;
+  const signatureDamage: Record<PartyRole, number> = { fighter: 6, mage: 8, support: 3 };
+  const damage = action === 'signature' ? signatureDamage[actingRole] : action === 'basic' ? 4 : 1;
+  if (actingRole === 'support' && action === 'signature') {
+    const wounded = state.party.find((member) => member.health < member.maxHealth);
+    if (wounded) wounded.health = Math.min(wounded.maxHealth, wounded.health + 5);
+  }
   state.combat.enemy.health = Math.max(0, state.combat.enemy.health - damage);
   state.combat.log.push(`${actingRole} uses ${action} for ${damage} damage.`);
   if (state.combat.enemy.health === 0) {
