@@ -57,6 +57,7 @@ class OverworldScene extends Phaser.Scene {
   private soul?: Phaser.GameObjects.Rectangle;
   private bullets?: Phaser.GameObjects.Group;
   private dodgeHits = 0;
+  private invulnerableUntil = 0;
 
   constructor(expedition: ExpeditionState, submit: Props["onAction"]) {
     super("overworld");
@@ -76,6 +77,7 @@ class OverworldScene extends Phaser.Scene {
     this.add.text(12, 32, "ARROWS: WALK   E: INTERACT", { fontFamily: "monospace", fontSize: "10px", color: "#b6a37c" }).setScrollFactor(0).setDepth(20);
     this.prompt = this.add.text(VIEW_WIDTH / 2, VIEW_HEIGHT - 34, "", { fontFamily: "monospace", fontSize: "13px", color: "#ffffff", backgroundColor: "#211b2c", padding: { x: 8, y: 5 } }).setOrigin(0.5).setScrollFactor(0).setDepth(20);
     if (this.expedition.combat?.status === "active") this.openBattle();
+    else if (this.expedition.combat?.status === "victory" || this.expedition.combat?.status === "defeat") this.openCombatOutcome();
     else this.openEncounterDialogue();
   }
 
@@ -186,9 +188,14 @@ class OverworldScene extends Phaser.Scene {
     overlay.add(this.add.rectangle(VIEW_WIDTH / 2, 154, 76, 76, 0x9f4851).setStrokeStyle(4, 0xf4deb0));
     overlay.add(this.add.text(VIEW_WIDTH / 2, 212, `${enemy.name}\nHP ${enemy.health}/${enemy.maxHealth}`, { fontFamily: "monospace", fontSize: "16px", color: "#f4deb0", align: "center" }).setOrigin(0.5));
     overlay.add(this.add.text(VIEW_WIDTH / 2, 264, `${this.expedition.combat!.activeMemberRole.toUpperCase()}'S TURN`, { fontFamily: "monospace", fontSize: "13px", color: "#ffffff" }).setOrigin(0.5));
+    this.expedition.party.forEach((member, index) => {
+      overlay.add(this.add.text(24, 290 + index * 18, `${member.role.toUpperCase().padEnd(7)} ${member.health}/${member.maxHealth}`, { fontFamily: "monospace", fontSize: "11px", color: member.health > 0 ? "#f4deb0" : "#a84949" }));
+    });
     (["STRIKE", "GUARD", "SIGNATURE", "RETREAT"] as const).forEach((label, index) => {
       const button = this.add.text(95 + index * 150, 350, `[ ${label} ]`, { fontFamily: "monospace", fontSize: "15px", color: "#f4deb0", backgroundColor: "#30283a", padding: { x: 8, y: 8 } }).setInteractive({ useHandCursor: true });
-      button.on("pointerdown", () => this.beginDodgePhase(label === "RETREAT" ? { type: "retreat" } : { type: "combat", action: label === "STRIKE" ? "basic" : label === "GUARD" ? "guard" : "signature" }));
+      const action = label === "RETREAT" ? { type: "retreat" } as const : { type: "combat", action: label === "STRIKE" ? "basic" : label === "GUARD" ? "guard" : "signature" } as const;
+      button.on("pointerdown", () => this.beginDodgePhase(action));
+      this.input.keyboard!.once(["keydown-ONE", "keydown-TWO", "keydown-THREE", "keydown-FOUR"][index], () => this.beginDodgePhase(action));
       overlay.add(button);
     });
   }
@@ -196,6 +203,7 @@ class OverworldScene extends Phaser.Scene {
   private beginDodgePhase(action: ExpeditionAction) {
     this.dodgeAction = action;
     this.dodgeHits = 0;
+    this.invulnerableUntil = 0;
     this.children.getAll().filter((child) => child.depth === 30).forEach((child) => child.destroy());
     const arena = this.add.rectangle(VIEW_WIDTH / 2, VIEW_HEIGHT / 2, 350, 180, 0x11101a).setStrokeStyle(4, 0xf4deb0).setDepth(31).setScrollFactor(0);
     this.add.text(VIEW_WIDTH / 2, 120, "DODGE THE FOG", { fontFamily: "monospace", fontSize: "16px", color: "#f4deb0" }).setOrigin(0.5).setDepth(32).setScrollFactor(0);
@@ -232,10 +240,33 @@ class OverworldScene extends Phaser.Scene {
       projectile.y += projectile.getData("speed") * (1 / 60);
       if (projectile.y > 292) projectile.destroy();
       if (Phaser.Geom.Intersects.RectangleToRectangle(this.soul!.getBounds(), projectile.getBounds())) {
-        this.dodgeHits += 1;
-        this.cameras.main.shake(80, 0.008);
+        if (this.time.now >= this.invulnerableUntil) {
+          this.dodgeHits += 1;
+          this.invulnerableUntil = this.time.now + 450;
+          this.soul!.setFillStyle(0xffffff);
+          this.time.delayedCall(120, () => this.soul?.setFillStyle(0xff4f6d));
+          this.cameras.main.shake(80, 0.008);
+        }
         projectile.destroy();
       }
     });
+  }
+
+  private openCombatOutcome() {
+    this.battleOpen = true;
+    const victory = this.expedition.combat?.status === "victory";
+    const title = victory ? "VICTORY" : "THE PARTY RETREATS";
+    const detail = victory
+      ? "The road is clear. Rewards have been added to the Expedition."
+      : "The Party recovers at Camp. A rival advances through the fog.";
+    const overlay = this.add.container(0, 0).setDepth(30).setScrollFactor(0);
+    overlay.add(this.add.rectangle(VIEW_WIDTH / 2, VIEW_HEIGHT / 2, VIEW_WIDTH, VIEW_HEIGHT, 0x12111b, 0.96));
+    overlay.add(this.add.text(VIEW_WIDTH / 2, 155, title, { fontFamily: "monospace", fontSize: "26px", color: victory ? "#f4deb0" : "#ff8592" }).setOrigin(0.5));
+    overlay.add(this.add.text(VIEW_WIDTH / 2, 215, detail, { fontFamily: "monospace", fontSize: "14px", color: "#ffffff", align: "center", wordWrap: { width: 480 } }).setOrigin(0.5));
+    const continueButton = this.add.text(VIEW_WIDTH / 2, 320, "[ CONTINUE ]", { fontFamily: "monospace", fontSize: "16px", color: "#f4deb0", backgroundColor: "#30283a", padding: { x: 12, y: 9 } }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+    const close = () => overlay.destroy(true);
+    continueButton.on("pointerdown", close);
+    this.input.keyboard!.once("keydown-ENTER", close);
+    overlay.add(continueButton);
   }
 }
