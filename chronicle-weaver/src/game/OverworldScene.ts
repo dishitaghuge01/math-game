@@ -146,7 +146,17 @@ export class OverworldScene extends Phaser.Scene {
       const [x, y] = positions[index] ?? [180 + index * 80, 180];
       const marker = this.add.container(x, y).setDepth(4);
       const landmarkRoll = seededTerrain(this.expedition.worldSeed, x, y);
-      marker.add([this.add.rectangle(0, 18, 46, 9, 0x182333, 0.6), this.add.image(0, 0, `landmark-${location.type}`).setScale(1.2), this.add.circle(-22, 3, 6 + landmarkRoll % 5, 0x27392e), this.add.circle(22, 5, 5 + landmarkRoll % 4, 0x27392e), this.add.text(0, 28, location.name, { fontFamily: "monospace", fontSize: "10px", color: "#f4deb0", align: "center", wordWrap: { width: 110 } }).setOrigin(0.5, 0)]);
+      const glowColor = location.type === "camp" ? 0xdd9c49 : location.type === "combat" ? 0xa84949 : location.type === "discovery" ? 0x78c9d5 : location.type === "social" ? 0xddc06b : 0xb99bdd;
+      const dressing = location.type === "combat"
+        ? [this.add.triangle(-26, 12, 0, 18, 8, 0, 16, 18, 0x5f2f38), this.add.triangle(26, 12, 0, 18, 8, 0, 16, 18, 0x5f2f38)]
+        : location.type === "social"
+          ? [this.add.circle(-23, -8, 5, glowColor, 0.7), this.add.circle(23, -8, 5, glowColor, 0.7)]
+          : location.type === "discovery"
+            ? [this.add.circle(0, 1, 30, glowColor, 0.16)]
+            : location.type === "camp"
+              ? [this.add.circle(0, 16, 13, glowColor, 0.3), this.add.circle(0, 17, 5, 0xf4deb0)]
+              : [this.add.circle(0, 1, 28, glowColor, 0.13)];
+      marker.add([this.add.ellipse(0, 26, 74, 16, 0x182333, 0.52), ...dressing, this.add.image(0, 0, `landmark-${location.type}`).setScale(1.85), this.add.circle(-31, 8, 6 + landmarkRoll % 5, 0x27392e), this.add.circle(31, 10, 5 + landmarkRoll % 4, 0x27392e), this.add.text(0, 42, location.name, { fontFamily: "monospace", fontSize: "10px", color: "#f4deb0", align: "center", wordWrap: { width: 132 } }).setOrigin(0.5, 0)]);
       if (location.id === current) marker.add(this.add.text(0, -28, "CAMP", { fontFamily: "monospace", fontSize: "10px", color: "#ffffff" }).setOrigin(0.5));
       this.landmarks.push({ id: location.id, marker });
     });
