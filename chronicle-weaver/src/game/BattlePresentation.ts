@@ -21,7 +21,16 @@ export function openBattlePresentation(scene: Phaser.Scene, expedition: Expediti
   overlay.add(scene.add.text(WIDTH / 2, 264, `${expedition.combat!.activeMemberRole.toUpperCase()}'S TURN`, { fontFamily: "monospace", fontSize: "13px", color: "#ffffff" }).setOrigin(0.5));
   expedition.party.forEach((member, index) => overlay.add(scene.add.text(24, 290 + index * 18, `${member.role.toUpperCase().padEnd(7)} ${member.health}/${member.maxHealth}${member.shield ? `  ◈${member.shield}` : ""}`, { fontFamily: "monospace", fontSize: "11px", color: member.health > 0 ? "#f4deb0" : "#a84949" })));
   overlay.add(scene.add.text(620, 290, `POTIONS ${expedition.resources.potions}`, { fontFamily: "monospace", fontSize: "11px", color: "#f4deb0" }));
-  overlay.add(scene.add.text(WIDTH / 2, 332, expedition.combat!.log.at(-1) ?? "Choose an action.", { fontFamily: "monospace", fontSize: "11px", color: "#b6a37c", align: "center", wordWrap: { width: 650 } }).setOrigin(0.5));
+  const latestLog = expedition.combat!.log.at(-1) ?? "Choose an action.";
+  overlay.add(scene.add.text(WIDTH / 2, 332, latestLog, { fontFamily: "monospace", fontSize: "11px", color: "#b6a37c", align: "center", wordWrap: { width: 650 } }).setOrigin(0.5));
+  const damage = /for (\d+) damage/.exec(latestLog)?.[1];
+  if (damage) {
+    const targetX = latestLog.includes("strikes") ? 620 : WIDTH / 2;
+    const targetY = latestLog.includes("strikes") ? 268 : 126;
+    const number = scene.add.text(targetX, targetY, `-${damage}`, { fontFamily: "monospace", fontSize: "24px", color: "#ff8592", stroke: "#251d2a", strokeThickness: 4 }).setOrigin(0.5);
+    scene.tweens.add({ targets: number, y: targetY - 34, alpha: 0, duration: 750, onComplete: () => number.destroy() });
+    overlay.add(number);
+  }
   (["STRIKE", "GUARD", "SIGNATURE", "ITEM", "RETREAT"] as const).forEach((label, index) => {
     const button = scene.add.text(38 + index * 146, 370, `[ ${label} ]`, { fontFamily: "monospace", fontSize: "15px", color: "#f4deb0", backgroundColor: "#30283a", padding: { x: 8, y: 8 } }).setInteractive({ useHandCursor: true });
     const action = label === "RETREAT" ? { type: "retreat" } as const : { type: "combat", action: label === "STRIKE" ? "basic" : label === "GUARD" ? "guard" : label === "SIGNATURE" ? "signature" : "item" } as const;
