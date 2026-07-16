@@ -53,6 +53,9 @@ class OverworldScene extends Phaser.Scene {
   private prompt!: Phaser.GameObjects.Text;
   private landmarks: Array<{ id: string; marker: Phaser.GameObjects.Container }> = [];
   private battleOpen = false;
+  private dodgeAction: ExpeditionAction | null = null;
+  private soul?: Phaser.GameObjects.Rectangle;
+  private bullets?: Phaser.GameObjects.Group;
 
   constructor(expedition: ExpeditionState, submit: Props["onAction"]) {
     super("overworld");
@@ -76,6 +79,10 @@ class OverworldScene extends Phaser.Scene {
   }
 
   update() {
+    if (this.dodgeAction) {
+      this.updateDodge();
+      return;
+    }
     if (this.battleOpen) return;
     const body = this.player.body as Phaser.Physics.Arcade.Body;
     body.setVelocity(0);
@@ -180,8 +187,49 @@ class OverworldScene extends Phaser.Scene {
     overlay.add(this.add.text(VIEW_WIDTH / 2, 264, `${this.expedition.combat!.activeMemberRole.toUpperCase()}'S TURN`, { fontFamily: "monospace", fontSize: "13px", color: "#ffffff" }).setOrigin(0.5));
     (["STRIKE", "GUARD", "SIGNATURE", "RETREAT"] as const).forEach((label, index) => {
       const button = this.add.text(95 + index * 150, 350, `[ ${label} ]`, { fontFamily: "monospace", fontSize: "15px", color: "#f4deb0", backgroundColor: "#30283a", padding: { x: 8, y: 8 } }).setInteractive({ useHandCursor: true });
-      button.on("pointerdown", () => this.submit(label === "RETREAT" ? { type: "retreat" } : { type: "combat", action: label === "STRIKE" ? "basic" : label === "GUARD" ? "guard" : "signature" }));
+      button.on("pointerdown", () => this.beginDodgePhase(label === "RETREAT" ? { type: "retreat" } : { type: "combat", action: label === "STRIKE" ? "basic" : label === "GUARD" ? "guard" : "signature" }));
       overlay.add(button);
+    });
+  }
+
+  private beginDodgePhase(action: ExpeditionAction) {
+    this.dodgeAction = action;
+    this.children.getAll().filter((child) => child.depth === 30).forEach((child) => child.destroy());
+    const arena = this.add.rectangle(VIEW_WIDTH / 2, VIEW_HEIGHT / 2, 350, 180, 0x11101a).setStrokeStyle(4, 0xf4deb0).setDepth(31).setScrollFactor(0);
+    this.add.text(VIEW_WIDTH / 2, 120, "DODGE THE FOG", { fontFamily: "monospace", fontSize: "16px", color: "#f4deb0" }).setOrigin(0.5).setDepth(32).setScrollFactor(0);
+    this.soul = this.add.rectangle(VIEW_WIDTH / 2, VIEW_HEIGHT / 2, 12, 12, 0xff4f6d).setDepth(32).setScrollFactor(0);
+    this.bullets = this.add.group();
+    const spawn = this.time.addEvent({ delay: 260, repeat: 11, callback: () => {
+      const x = Phaser.Math.Between(250, 518);
+      const bullet = this.add.rectangle(x, 162, 9, 9, 0xe8e4da).setDepth(32).setScrollFactor(0);
+      bullet.setData("speed", Phaser.Math.Between(85, 140));
+      this.bullets!.add(bullet);
+    }});
+    this.time.delayedCall(3300, () => {
+      spawn.remove(false);
+      this.bullets?.clear(true, true);
+      arena.destroy();
+      this.soul?.destroy();
+      this.submit(this.dodgeAction!);
+      this.dodgeAction = null;
+    });
+  }
+
+  private updateDodge() {
+    if (!this.soul || !this.bullets) return;
+    const speed = 3.2;
+    if (this.keys.left.isDown) this.soul.x = Phaser.Math.Clamp(this.soul.x - speed, 222, 546);
+    if (this.keys.right.isDown) this.soul.x = Phaser.Math.Clamp(this.soul.x + speed, 222, 546);
+    if (this.keys.up.isDown) this.soul.y = Phaser.Math.Clamp(this.soul.y - speed, 148, 284);
+    if (this.keys.down.isDown) this.soul.y = Phaser.Math.Clamp(this.soul.y + speed, 148, 284);
+    this.bullets.getChildren().forEach((bullet) => {
+      const projectile = bullet as Phaser.GameObjects.Rectangle;
+      projectile.y += projectile.getData("speed") * (1 / 60);
+      if (projectile.y > 292) projectile.destroy();
+      if (Phaser.Geom.Intersects.RectangleToRectangle(this.soul!.getBounds(), projectile.getBounds())) {
+        this.cameras.main.shake(80, 0.008);
+        projectile.destroy();
+      }
     });
   }
 }
