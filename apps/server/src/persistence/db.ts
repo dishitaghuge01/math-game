@@ -42,6 +42,13 @@ db.exec(`
     created_at TEXT NOT NULL,
     PRIMARY KEY (session_id, flag)
   );
+
+  CREATE TABLE IF NOT EXISTS expeditions (
+    expedition_id TEXT PRIMARY KEY,
+    state_json TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
 `);
 
 export default db;

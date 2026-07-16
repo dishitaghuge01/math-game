@@ -139,6 +139,22 @@ Open **http://localhost:8080** and you'll be redirected to `/decision` to start 
 
 ---
 
+## Playing the Expedition Phaser prototype
+
+Start the server and frontend as described in [Getting started](#getting-started), then open the frontend and visit **`/world`**.
+
+| Control | Action |
+| --- | --- |
+| Arrow keys | Move the Expedition Party / dodge projectiles |
+| `E` | Travel to a nearby connected landmark |
+| `1`–`5` | Combat actions: Strike, Guard, Signature, Item, Retreat |
+| `1` / `2`, or `↑` / `↓` then `Enter` | Choose Discovery/Social options |
+| `Space` | Reveal dialogue text immediately |
+| `M` | Toggle synthesized audio |
+| `R` | Toggle reduced-motion mode |
+
+The one-Region loop includes Discovery, Social, Combat, Camp recovery, a final Encounter, and an ending. Use the Region page’s Expedition Code controls to export/import a deterministic run. For structured balance testing, follow [`docs/one-region-playtest.md`](./docs/one-region-playtest.md).
+
 ## Running Supermemory locally
 
 This project runs Supermemory as a standard part of local development, so narrative generation has long-term recall beyond what fits in the decision vector. Start it in its own terminal before (or alongside) `apps/server`:

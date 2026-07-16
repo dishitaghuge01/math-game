@@ -1,225 +1,264 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { fetchMechanics, fetchWorld } from "@/api/gameApi";
-import { useGameStore } from "@/store/gameStore";
-import { Loader2, MapPin, Skull, Sparkle } from "lucide-react";
+import { lazy, Suspense } from "react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Compass, Flame, MapPin, Shield, Sparkles, Swords } from "lucide-react";
+import { fetchExpeditionCode, importExpeditionCode, postExpeditionAction, startExpedition, type ExpeditionState } from "@/api/gameApi";
 
-export const Route = createFileRoute("/world")({
-  component: WorldPage,
-});
+const ExpeditionGame = lazy(() => import("@/game/ExpeditionGame").then((module) => ({ default: module.ExpeditionGame })));
 
-const TERRAIN_LABELS = ["mist", "moor", "wold", "peak"];
+export const Route = createFileRoute("/world")({ component: RegionMapPage });
 
-function WorldPage() {
-  const currentNodeId = useGameStore((s) => s.currentNodeId);
-  const chunkId = currentNodeId ?? "default";
+const icon = {
+  camp: Flame,
+  combat: Swords,
+  discovery: Sparkles,
+  social: Shield,
+  landmark: MapPin,
+};
 
-  const worldQuery = useQuery({
-    queryKey: ["world", chunkId],
-    queryFn: () => fetchWorld(chunkId),
+function RegionMapPage() {
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const expedition = useQuery({ queryKey: ["expedition"], queryFn: startExpedition });
+  const travel = useMutation({
+    mutationFn: postExpeditionAction,
+    onSuccess: (state) => queryClient.setQueryData(["expedition"], state),
   });
-  const mechanicsQuery = useQuery({
-    queryKey: ["mechanics", chunkId],
-    queryFn: () => fetchMechanics(1),
-  });
-
-  if (worldQuery.isLoading) {
+  const exportCode = async () => {
+    const code = await fetchExpeditionCode();
+    await navigator.clipboard?.writeText(code);
+    window.prompt("Your Expedition Code (copied when permitted):", code);
+  };
+  const importCode = async () => {
+    const code = window.prompt("Paste an Expedition Code:");
+    if (!code) return;
+    queryClient.setQueryData(["expedition"], await importExpeditionCode(code));
+  };
+  if (expedition.isLoading || !expedition.data)
     return (
-      <div className="min-h-[60vh] flex items-center justify-center">
-        <div className="parchment-card p-12 text-center">
-          <Loader2 className="w-8 h-8 mx-auto mb-4 animate-spin text-[color:var(--color-ember)]" />
-          <p className="font-hand italic">The cartographer sketches thy surroundings…</p>
-        </div>
+      <div className="min-h-[60vh] grid place-items-center font-hand italic">
+        Charting the Region…
       </div>
     );
-  }
-  if (worldQuery.isError || !worldQuery.data) {
+  if (expedition.isError)
     return (
-      <div className="min-h-[60vh] flex items-center justify-center">
-        <div className="parchment-card p-10 max-w-md text-center">
-          <p className="font-body italic">The map is smudged beyond reading.</p>
-          <button
-            onClick={() => worldQuery.refetch()}
-            className="mt-4 px-4 py-2 bg-[color:var(--color-ember)] text-[color:var(--color-parchment)] font-heading uppercase text-xs tracking-wider"
-          >
-            Redraw
-          </button>
-        </div>
+      <div className="min-h-[60vh] grid place-items-center font-hand italic">
+        The Region cannot be found.
       </div>
     );
-  }
-
-  const world = worldQuery.data;
-
+  const state = expedition.data;
+  const current = state.region.locations.find(
+    (location) => location.id === state.region.currentLocationId,
+  )!;
   return (
-    <div className="max-w-6xl mx-auto px-6 py-10">
-      <header className="text-center mb-8">
-        <div className="font-hand italic text-sm text-[color:var(--color-ink-soft)]">
-          — herein lies —
-        </div>
-        <h1 className="font-display text-4xl md:text-5xl mt-1">{world.locationName || "The Wilds"}</h1>
-        <div className="mt-2 inline-flex items-center gap-2 font-heading text-xs tracking-widest uppercase text-[color:var(--color-ink-soft)]">
-          <MapPin className="w-3.5 h-3.5" />
-          Ye stand at {world.currentPosition.row},{world.currentPosition.col}
-        </div>
+    <div className="max-w-5xl mx-auto px-6 py-10">
+      <header className="text-center">
+        <p className="font-hand italic text-[color:var(--color-ink-soft)]">Region I</p>
+        <h1 className="font-display text-4xl sm:text-5xl">{state.region.name}</h1>
+        <p className="font-hand italic mt-2">The party rests at {current.name}.</p>
+        {state.region.rivalAdvanced && <p className="font-hand italic text-[color:var(--color-blood)]">A rival has advanced through the fog while the Party recovered.</p>}
       </header>
-
-      <div className="grid gap-8 lg:grid-cols-[1fr_320px]">
-        <div className="parchment-card p-6">
-          <MapGrid world={world} />
-          <Legend />
-        </div>
-        <aside className="space-y-6">
-          <EncounterCard mechanics={mechanicsQuery.data} loading={mechanicsQuery.isLoading} />
-          <LootCard mechanics={mechanicsQuery.data} loading={mechanicsQuery.isLoading} />
-        </aside>
+      <section className="mt-8">
+        <Suspense fallback={<div className="h-[432px] grid place-items-center parchment-card font-hand italic">Preparing the Expedition…</div>}>
+          <ExpeditionGame expedition={state} onAction={(action) => travel.mutate(action)} />
+        </Suspense>
+        {travel.isError && <p role="alert" className="mt-3 text-center font-hand italic text-[color:var(--color-blood)]">{travel.error.message}</p>}
+      </section>
+      {state.combat?.status === "active" && (
+        <CombatPanel
+          state={state}
+          busy={travel.isPending}
+          onAction={(action) => travel.mutate({ type: "combat", action })}
+          onRetreat={() => travel.mutate({ type: "retreat" })}
+        />
+      )}
+      {current.type === "discovery" && (
+        <ChoicePanel
+          title={current.name}
+          prompt={current.name === "The Splintered Observatory" ? "Its broken lens offers a choice between the road you know and the road you need." : "The water reflects a road that does not yet exist."}
+          choices={[
+            ["search", "Search the depths"],
+            ["press-on", "Press into the fog"],
+          ]}
+          busy={travel.isPending}
+          onChoose={(choice) =>
+            travel.mutate({ type: "discovery", choice: choice as "search" | "press-on" })
+          }
+        />
+      )}
+      {current.type === "social" && (
+        <ChoicePanel
+          title="Pilgrim Lanterns"
+          prompt="The Party disagrees on what the distant lights promise."
+          choices={[
+            ["share", "Share the burden"],
+            ["command", "Command the path"],
+          ]}
+          busy={travel.isPending}
+          onChoose={(choice) =>
+            travel.mutate({ type: "social", choice: choice as "share" | "command" })
+          }
+        />
+      )}
+      {state.ending && (
+        <section className="parchment-card mt-6 p-6 text-center border-2 border-[color:var(--color-gold-deep)]">
+          <p className="font-heading uppercase tracking-widest text-xs">Prologue complete</p>
+          <h2 className="font-display text-3xl mt-2">{state.ending.title}</h2>
+          <p className="font-hand italic mt-3">{state.ending.summary}</p>
+        </section>
+      )}
+      <div className="mt-6 flex justify-center gap-4">
+        <button onClick={exportCode} className="font-hand italic underline">export Expedition Code</button>
+        <button onClick={importCode} className="font-hand italic underline">import Expedition Code</button>
+        <button onClick={() => navigate({ to: "/" })} className="font-hand italic underline">consult the Expedition Party</button>
       </div>
     </div>
   );
 }
 
-function MapGrid({
-  world,
+function CombatPanel({
+  state,
+  busy,
+  onAction,
+  onRetreat,
 }: {
-  world: { grid: number[][]; revealed: boolean[][]; currentPosition: { row: number; col: number } };
+  state: ExpeditionState;
+  busy: boolean;
+  onAction: (action: "basic" | "guard" | "signature") => void;
+  onRetreat: () => void;
 }) {
-  const terrainColor = (tier: number) => {
-    const colors = [
-      "oklch(0.78 0.05 82)", // mist / low
-      "oklch(0.65 0.09 105)", // moor
-      "oklch(0.5 0.09 145)", // wold
-      "oklch(0.4 0.05 260)", // peak
-    ];
-    return colors[Math.max(0, Math.min(3, tier))];
-  };
+  const combat = state.combat!;
   return (
-    <div
-      className="grid gap-[2px] ink-border p-2 aspect-square"
-      style={{
-        gridTemplateColumns: `repeat(${world.grid[0]?.length ?? 16}, minmax(0, 1fr))`,
-        background: "oklch(0.2 0.02 40)",
-      }}
+    <section className="parchment-card mt-6 p-6 border-2 border-[color:var(--color-blood)]/50 text-center">
+      <p className="font-heading uppercase tracking-widest text-xs">Combat Encounter</p>
+      <h2 className="font-display text-3xl mt-2">{combat.enemy.name}</h2>
+      <p className="font-hand italic">
+        Vitality {combat.enemy.health}/{combat.enemy.maxHealth} · {combat.activeMemberRole}&apos;s
+        turn
+      </p>
+      <div className="grid grid-cols-3 gap-2 max-w-md mx-auto mt-5">
+        {(
+          [
+            ["basic", "Strike"],
+            ["guard", "Guard"],
+            ["signature", "Signature"],
+          ] as const
+        ).map(([action, label]) => (
+          <button
+            key={action}
+            disabled={busy}
+            onClick={() => onAction(action)}
+            className="py-3 bg-[color:var(--color-ink)] text-[color:var(--color-parchment)] font-heading text-xs uppercase tracking-wider hover:bg-[color:var(--color-ember)] disabled:opacity-50"
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+      <button
+        disabled={busy}
+        onClick={onRetreat}
+        className="mt-4 font-hand italic text-sm underline text-[color:var(--color-blood)]"
+      >
+        Retreat to Camp
+      </button>
+      <p className="font-hand italic text-sm mt-4">{combat.log.at(-1)}</p>
+    </section>
+  );
+}
+
+function ChoicePanel({
+  title,
+  prompt,
+  choices,
+  busy,
+  onChoose,
+}: {
+  title: string;
+  prompt: string;
+  choices: string[][];
+  busy: boolean;
+  onChoose: (choice: string) => void;
+}) {
+  return (
+    <section className="parchment-card mt-6 p-6 text-center">
+      <h2 className="font-display text-2xl">{title}</h2>
+      <p className="font-hand italic mt-2">{prompt}</p>
+      <div className="grid sm:grid-cols-2 gap-3 mt-5">
+        {choices.map(([choice, label]) => (
+          <button
+            key={choice}
+            disabled={busy}
+            onClick={() => onChoose(choice)}
+            className="p-3 bg-[color:var(--color-ink)] text-[color:var(--color-parchment)] font-heading uppercase tracking-wider text-xs hover:bg-[color:var(--color-ember)]"
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function Location({
+  location,
+  state,
+  busy,
+  onTravel,
+  index,
+}: {
+  location: ExpeditionState["region"]["locations"][number];
+  state: ExpeditionState;
+  busy: boolean;
+  onTravel: () => void;
+  index: number;
+}) {
+  const Icon = icon[location.type];
+  const current = location.id === state.region.currentLocationId;
+  const reachable =
+    state.region.locations
+      .find((node) => node.id === state.region.currentLocationId)
+      ?.connectedTo.includes(location.id) ?? false;
+  const visible = location.revealed;
+  return (
+    <button
+      disabled={!reachable || busy || current}
+      onClick={onTravel}
+      className={`w-full text-left flex items-center gap-4 p-4 border transition-all ${current ? "bg-[color:var(--color-gold)]/25 border-[color:var(--color-gold-deep)]" : reachable ? "bg-[color:var(--color-parchment-dark)] hover:-translate-y-0.5 border-[color:var(--color-ink)]/35" : "bg-[color:var(--color-ink)]/10 border-transparent opacity-60"}`}
     >
-      {world.grid.map((row, r) =>
-        row.map((tier, c) => {
-          const revealed = world.revealed[r]?.[c];
-          const isHere = world.currentPosition.row === r && world.currentPosition.col === c;
-          return (
-            <div
-              key={`${r}-${c}`}
-              title={revealed ? `${TERRAIN_LABELS[tier]} (${r},${c})` : "unknown"}
-              className="relative"
-              style={{
-                background: revealed ? terrainColor(tier) : "oklch(0.15 0.02 40)",
-                boxShadow: revealed ? "inset 0 0 4px rgba(40,20,5,0.35)" : "none",
-              }}
-            >
-              {isHere && (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-full h-full wax-seal torchlight" />
-                </div>
-              )}
-            </div>
-          );
-        }),
-      )}
-    </div>
-  );
-}
-
-function Legend() {
-  return (
-    <div className="mt-4 flex flex-wrap items-center justify-center gap-4 text-xs font-hand italic text-[color:var(--color-ink-soft)]">
-      {TERRAIN_LABELS.map((t, i) => (
-        <span key={t} className="flex items-center gap-1.5">
-          <span
-            className="inline-block w-3 h-3 ink-border"
-            style={{
-              background: ["oklch(0.78 0.05 82)", "oklch(0.65 0.09 105)", "oklch(0.5 0.09 145)", "oklch(0.4 0.05 260)"][i],
-            }}
-          />
-          {t}
-        </span>
-      ))}
-      <span className="flex items-center gap-1.5">
-        <span className="inline-block w-3 h-3 rounded-full wax-seal" /> thou
+      <div className="w-11 h-11 grid place-items-center rounded-full ink-border relative overflow-hidden">
+        <svg viewBox="0 0 44 44" className="absolute inset-0" aria-hidden>
+          <rect width="44" height="44" fill={sigilColor(location.type)} />
+          <path d={sigilPath(location.type)} fill="rgba(255,244,205,.45)" />
+        </svg>
+        <Icon className="w-4 h-4 relative z-10 text-white" />
+      </div>
+      <div className="flex-1">
+        <p className="font-heading uppercase tracking-widest text-xs">
+          {visible ? location.type : "uncharted"}
+        </p>
+        <h2 className="font-display text-xl">{visible ? location.name : "Fogbound road"}</h2>
+      </div>
+      <span className="font-hand italic text-sm">
+        {current ? "here" : reachable ? "travel →" : index > 0 ? "beyond" : ""}
       </span>
-    </div>
+    </button>
   );
 }
 
-function EncounterCard({
-  mechanics,
-  loading,
-}: {
-  mechanics: { enemyStats: { health: number; count: number } } | undefined;
-  loading: boolean;
-}) {
-  return (
-    <div className="parchment-card p-5">
-      <div className="flex items-center gap-2 mb-3">
-        <Skull className="w-4 h-4 text-[color:var(--color-blood)]" />
-        <h3 className="font-heading uppercase tracking-widest text-sm">Foes Sighted</h3>
-      </div>
-      {loading || !mechanics ? (
-        <p className="font-hand italic text-sm text-[color:var(--color-ink-soft)]">Scouts still returning…</p>
-      ) : (
-        <div className="space-y-2">
-          <Stat label="Enemies" value={String(mechanics.enemyStats.count)} />
-          <Stat label="Vitality each" value={String(mechanics.enemyStats.health)} />
-        </div>
-      )}
-    </div>
-  );
+function sigilColor(type: ExpeditionState["region"]["locations"][number]["type"]): string {
+  return {
+    camp: "hsl(28 34% 31%)",
+    combat: "hsl(8 40% 31%)",
+    discovery: "hsl(190 34% 31%)",
+    social: "hsl(145 34% 31%)",
+    landmark: "hsl(265 34% 31%)",
+  }[type];
 }
 
-function LootCard({
-  mechanics,
-  loading,
-}: {
-  mechanics: { lootWeights: Record<string, number> } | undefined;
-  loading: boolean;
-}) {
-  const rarityColor: Record<string, string> = {
-    common: "oklch(0.55 0.03 80)",
-    rare: "oklch(0.55 0.14 240)",
-    legendary: "oklch(0.7 0.18 60)",
-  };
-  return (
-    <div className="parchment-card p-5">
-      <div className="flex items-center gap-2 mb-3">
-        <Sparkle className="w-4 h-4 text-[color:var(--color-gold-deep)]" />
-        <h3 className="font-heading uppercase tracking-widest text-sm">The Hoard</h3>
-      </div>
-      {loading || !mechanics ? (
-        <p className="font-hand italic text-sm text-[color:var(--color-ink-soft)]">The chests are yet to open…</p>
-      ) : (
-        <div className="space-y-3">
-          {Object.entries(mechanics.lootWeights).map(([rarity, w]) => (
-            <div key={rarity}>
-              <div className="flex justify-between text-xs font-heading uppercase tracking-wider mb-1">
-                <span>{rarity}</span>
-                <span>{Math.round(w * 100)}%</span>
-              </div>
-              <div className="h-2 ink-border bg-[color:var(--color-parchment-dark)] overflow-hidden">
-                <div
-                  className="h-full torchlight"
-                  style={{ width: `${w * 100}%`, background: rarityColor[rarity] ?? "gray" }}
-                />
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex justify-between border-b border-[color:var(--color-ink)]/15 pb-1 last:border-0">
-      <span className="font-hand italic text-sm text-[color:var(--color-ink-soft)]">{label}</span>
-      <span className="font-heading text-sm">{value}</span>
-    </div>
-  );
+function sigilPath(type: ExpeditionState["region"]["locations"][number]["type"]): string {
+  return type === "combat"
+    ? "M4 35 22 5l18 30z"
+    : type === "discovery"
+      ? "M5 22 22 5l17 17-17 17z"
+      : "M7 7h30v30H7z";
 }

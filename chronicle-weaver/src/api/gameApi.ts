@@ -1,7 +1,6 @@
-import { getOrCreateClientIds } from "./session";
+import { getOrCreateClientIds, resetClientIds } from "./session";
 
-const BASE_URL =
-  (import.meta.env.VITE_SERVER_URL as string | undefined) ?? "http://localhost:4000";
+const BASE_URL = (import.meta.env.VITE_SERVER_URL as string | undefined) ?? "http://localhost:4000";
 
 export interface DecisionVector {
   morality: number;
@@ -46,6 +45,66 @@ export interface PaletteResponse {
   palette: string[];
 }
 
+export interface ExpeditionState {
+  expeditionId: string;
+  worldSeed: number;
+  party: Array<{
+    role: "fighter" | "mage" | "support";
+    name: string;
+    motive: string;
+    portrait: string;
+    health: number;
+    maxHealth: number;
+    shield: number;
+    abilities: string[];
+    signatureAbility: { name: string; effects: Array<"damage" | "shield" | "healing" | "buff" | "debuff" | "turn-manipulation"> };
+    bond: number;
+  }>;
+  traits: Record<
+    "mercy" | "resolve" | "curiosity" | "defiance" | "kinship",
+    { tier: string; recentShift: string }
+  >;
+  resources: { gold: number; experience: number; potions: number };
+  majorDecisionResolved: boolean;
+  ending: { title: string; summary: string } | null;
+  combat: {
+    status: "active" | "victory" | "defeat";
+    enemy: { name: string; health: number; maxHealth: number; weakened: number };
+    activeMemberRole: "fighter" | "mage" | "support";
+    log: string[];
+  } | null;
+  region: {
+    name: string;
+    currentLocationId: string;
+    rivalAdvanced: boolean;
+    locations: Array<{
+      id: string;
+      name: string;
+      type: "camp" | "combat" | "discovery" | "social" | "landmark";
+      connectedTo: string[];
+      revealed: boolean;
+      detail?: string;
+    }>;
+  };
+}
+
+export interface RpgCombat {
+  player: { name: string; health: number; maxHealth: number; attack: number };
+  enemy: { name: string; health: number; maxHealth: number; attack: number };
+  potions: number;
+  status: "active" | "victory" | "defeat";
+}
+
+export interface RpgGameState {
+  grid: number[][];
+  revealed: boolean[][];
+  position: { row: number; col: number };
+  gold: number;
+  experience: number;
+  combat: RpgCombat | null;
+  log: string[];
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE_URL}${path}`, {
     ...init,
@@ -58,7 +117,9 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     let body: unknown = null;
     try {
       body = await res.json();
-    } catch {}
+    } catch {
+      // The API can return a non-JSON error response.
+    }
     const message =
       body && typeof body === "object" && "error" in body
         ? String((body as { error: unknown }).error)
@@ -98,15 +159,64 @@ export async function postDecision(args: {
 export async function fetchWorld(chunkId: string): Promise<WorldChunk> {
   const { sessionId } = getOrCreateClientIds();
   const q = new URLSearchParams({ sessionId });
-  return request<WorldChunk>(
-    `/generate/world/${encodeURIComponent(chunkId)}?${q.toString()}`,
-  );
+  return request<WorldChunk>(`/generate/world/${encodeURIComponent(chunkId)}?${q.toString()}`);
 }
 
 export async function fetchMechanics(baseDifficulty = 1): Promise<MechanicsResponse> {
   const { sessionId } = getOrCreateClientIds();
   const q = new URLSearchParams({ sessionId, baseDifficulty: String(baseDifficulty) });
   return request<MechanicsResponse>(`/generate/mechanics?${q.toString()}`);
+}
+
+export async function startExpedition(): Promise<ExpeditionState> {
+  const { sessionId } = getOrCreateClientIds();
+  return request<ExpeditionState>("/expeditions", {
+    method: "POST",
+    body: JSON.stringify({ expeditionId: sessionId }),
+  });
+}
+
+export async function fetchExpeditionCode(): Promise<string> {
+  const { sessionId } = getOrCreateClientIds();
+  const response = await request<{ code: string }>(`/expeditions/${encodeURIComponent(sessionId)}/code`);
+  return response.code;
+}
+
+export async function importExpeditionCode(code: string): Promise<ExpeditionState> {
+  resetClientIds();
+  const { sessionId } = getOrCreateClientIds();
+  return request<ExpeditionState>("/expeditions/import", {
+    method: "POST",
+    body: JSON.stringify({ expeditionId: sessionId, code }),
+  });
+}
+
+export async function postExpeditionAction(
+  action:
+    | { type: "travel"; destinationId: string }
+    | { type: "combat"; action: "basic" | "guard" | "signature" | "item"; dodgeHits?: number }
+    | { type: "discovery"; choice: "search" | "press-on" }
+    | { type: "social"; choice: "share" | "command" }
+    | { type: "retreat" },
+): Promise<ExpeditionState> {
+  const { sessionId } = getOrCreateClientIds();
+  return request<ExpeditionState>(`/expeditions/${encodeURIComponent(sessionId)}/actions`, {
+    method: "POST",
+    body: JSON.stringify(action),
+  });
+}
+
+export async function fetchRpgGame(): Promise<RpgGameState> {
+  const { sessionId } = getOrCreateClientIds();
+  return request<RpgGameState>(`/game?${new URLSearchParams({ sessionId }).toString()}`);
+}
+
+export async function postRpgAction(action: unknown): Promise<RpgGameState> {
+  const { sessionId } = getOrCreateClientIds();
+  return request<RpgGameState>("/game/action", {
+    method: "POST",
+    body: JSON.stringify({ sessionId, action }),
+  });
 }
 
 export async function fetchPalette(): Promise<PaletteResponse> {
