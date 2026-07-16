@@ -23,10 +23,11 @@
 - Every party has three complementary role foundations: a Fighter who absorbs pressure and protects allies, a Mage who controls conditions and deals magical damage, and a Support character who heals, buffs, and alters turn economy. Seeded generation varies their identities and expressions while preserving these tactical responsibilities.
 - Signature Ability mechanics come from a finite, balanced procedural grammar: damage, shield, heal, buff, debuff, and turn manipulation. Seeded generation determines names, visual motifs, elemental affinities, and combinations according to role, personality, relationships, and Expedition Traits.
 - Defeat retreats the party to the most recent camp rather than ending an Expedition. The party loses consumable resources and the Region Map changes through closed routes, a rival’s advance, or a new opportunity; major choices and party development persist.
+- Each Region aims for approximately 50% combat Encounters, 30% discoveries or hazards, and 20% social Encounters. Every location must present a meaningful decision or tactical challenge; text-only filler locations are excluded.
 
 ## Open decisions
 
-- Encounter mix and decision cadence
+- First release scope
 - Choice Vector dimensions and how players perceive them
 - Campaign structure and ending conditions
 - Procedural asset style and production pipeline

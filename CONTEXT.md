@@ -83,3 +83,11 @@ _Avoid_: random abilities, freeform spells
 **Camp**:
 The most recently reached recovery point in a Region. Defeated parties return here, while their prior decisions and development persist and the Region Map changes.
 _Avoid_: checkpoint, respawn point
+
+**Discovery Encounter**:
+A non-combat Encounter in which the party manages a hazard, route, resource, or puzzle.
+_Avoid_: exploration event
+
+**Social Encounter**:
+An Encounter centered on party relationships or an NPC/faction decision.
+_Avoid_: dialogue node
