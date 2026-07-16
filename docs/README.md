@@ -1,3 +1,0 @@
-# Documentation
-
-Placeholder docs directory.

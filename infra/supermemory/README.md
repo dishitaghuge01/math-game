@@ -1,3 +1,0 @@
-# Supermemory
-
-Placeholder infrastructure directory.

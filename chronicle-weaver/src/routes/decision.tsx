@@ -159,17 +159,17 @@ function ChoiceCard({
     <button
       disabled={disabled}
       onClick={onPick}
-      className="group text-left w-full min-w-0 parchment-card p-5 hover:-translate-y-1 hover:shadow-[0_25px_45px_-15px_rgba(40,25,10,0.5)] transition-all disabled:opacity-60 disabled:cursor-wait"
+      className="group text-left parchment-card p-5 hover:-translate-y-1 hover:shadow-[0_25px_45px_-15px_rgba(40,25,10,0.5)] transition-all disabled:opacity-60 disabled:cursor-wait"
     >
       <div className="flex items-start gap-3">
-        <span className="font-display text-3xl text-[color:var(--color-ember)] leading-none shrink-0">
+        <span className="font-display text-3xl text-[color:var(--color-ember)] leading-none">
           {runes[index] ?? "✦"}
         </span>
-        <div className="flex-1 min-w-0">
-          <div className="font-heading text-base uppercase tracking-wider text-[color:var(--color-ink)] mb-1 group-hover:text-[color:var(--color-ember)] transition-colors break-words">
+        <div className="flex-1">
+          <div className="font-heading text-base uppercase tracking-wider text-[color:var(--color-ink)] mb-1 group-hover:text-[color:var(--color-ember)] transition-colors">
             {choice.label}
           </div>
-          <p className="font-body text-sm italic text-[color:var(--color-ink-soft)] leading-snug break-words">
+          <p className="font-body text-sm italic text-[color:var(--color-ink-soft)] leading-snug">
             {choice.description}
           </p>
         </div>

@@ -64,7 +64,7 @@ function CharacterPage() {
             </div>
           </div>
 
-          <div className="flex-1 min-w-0">
+          <div className="flex-1">
             <div className="font-hand italic text-sm text-[color:var(--color-ink-soft)]">— Character Sheet —</div>
             <h1 className="font-display text-4xl md:text-5xl">Ye, the Wanderer</h1>
             <p className="font-body italic mt-2 text-[color:var(--color-ink-soft)] max-w-xl">
@@ -126,9 +126,9 @@ function CharacterPage() {
             <ol className="space-y-2">
               {journal.slice(0, 6).map((entry, i) => (
                 <li key={`${entry.at}-${i}`} className="flex gap-3 text-sm">
-                  <span className="font-display text-[color:var(--color-ember)] shrink-0">{i + 1}.</span>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-body break-words">{entry.choiceLabel}</div>
+                  <span className="font-display text-[color:var(--color-ember)]">{i + 1}.</span>
+                  <div className="flex-1">
+                    <div className="font-body">{entry.choiceLabel}</div>
                     <div className="font-hand italic text-xs text-[color:var(--color-ink-soft)]">
                       shift · {entry.deltaMagnitude.toFixed(3)}
                     </div>
