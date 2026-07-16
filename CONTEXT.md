@@ -31,3 +31,7 @@ _Avoid_: event
 **Expedition Cycle**:
 The repeating player loop of exploration, Encounter resolution, resource change, and an expedition-defining choice that reshapes later content.
 _Avoid_: gameplay loop
+
+**Expedition Party**:
+The group of up to three playable characters travelling through an Expedition. Each character has a distinct personality and a development arc shaped by the player’s decisions and use of that character.
+_Avoid_: roster, squad
