@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import { useEffect, useRef } from "react";
 import type { ExpeditionState } from "@/api/gameApi";
+import { openCampPresentation, openEndingPresentation } from "./ConclusionPresentation";
 import type { ExpeditionAction, ExpeditionGameProps } from "./types";
 
 const VIEW_WIDTH = 768;
@@ -350,44 +351,14 @@ class OverworldScene extends Phaser.Scene {
     const continueButton = this.add.text(VIEW_WIDTH / 2, 320, "[ CONTINUE ]", { fontFamily: "monospace", fontSize: "16px", color: "#f4deb0", backgroundColor: "#30283a", padding: { x: 12, y: 9 } }).setOrigin(0.5).setInteractive({ useHandCursor: true });
     const close = () => {
       overlay.destroy(true);
-      if (victory && this.expedition.ending) this.openEndingScene();
-      if (!victory) this.openCampScene();
+      if (victory && this.expedition.ending) openEndingPresentation(this, this.expedition);
+      if (!victory) openCampPresentation(this, this.expedition);
     };
     continueButton.on("pointerdown", close);
     this.input.keyboard!.once("keydown-ENTER", close);
     overlay.add(continueButton);
   }
 
-  private openCampScene() {
-    const overlay = this.add.container(0, 0).setDepth(35).setScrollFactor(0);
-    overlay.add(this.add.rectangle(VIEW_WIDTH / 2, VIEW_HEIGHT / 2, VIEW_WIDTH, VIEW_HEIGHT, 0x2b2030, 0.98));
-    overlay.add(this.add.circle(VIEW_WIDTH / 2, 150, 46, 0xdd9c49, 0.35));
-    overlay.add(this.add.circle(VIEW_WIDTH / 2, 160, 25, 0xf4deb0, 0.9));
-    overlay.add(this.add.text(VIEW_WIDTH / 2, 225, "HEARTH OF REEDS", { fontFamily: "monospace", fontSize: "25px", color: "#f4deb0" }).setOrigin(0.5));
-    overlay.add(this.add.text(VIEW_WIDTH / 2, 262, `The Party regroups. Potions remaining: ${this.expedition.resources.potions}.\nA rival has advanced through the fog.`, { fontFamily: "monospace", fontSize: "14px", color: "#ffffff", align: "center", lineSpacing: 8 }).setOrigin(0.5));
-    const leave = this.add.text(VIEW_WIDTH / 2, 350, "[ RETURN TO THE ROAD ]", { fontFamily: "monospace", fontSize: "14px", color: "#f4deb0", backgroundColor: "#30283a", padding: { x: 10, y: 8 } }).setOrigin(0.5).setInteractive({ useHandCursor: true });
-    leave.on("pointerdown", () => overlay.destroy(true));
-    this.input.keyboard!.once("keydown-ENTER", () => overlay.destroy(true));
-    overlay.add(leave);
-  }
-
-  private openEndingScene() {
-    const ending = this.expedition.ending!;
-    const overlay = this.add.container(0, 0).setDepth(35).setScrollFactor(0);
-    overlay.add(this.add.rectangle(VIEW_WIDTH / 2, VIEW_HEIGHT / 2, VIEW_WIDTH, VIEW_HEIGHT, 0x172337, 0.98));
-    for (let index = 0; index < 18; index += 1) {
-      const x = 70 + (index * 97) % 650;
-      const y = 60 + (index * 53) % 300;
-      overlay.add(this.add.circle(x, y, 2 + index % 3, 0xf4deb0, 0.7));
-    }
-    overlay.add(this.add.text(VIEW_WIDTH / 2, 105, "PROLOGUE COMPLETE", { fontFamily: "monospace", fontSize: "13px", color: "#b6a37c" }).setOrigin(0.5));
-    overlay.add(this.add.text(VIEW_WIDTH / 2, 160, ending.title.toUpperCase(), { fontFamily: "monospace", fontSize: "28px", color: "#f4deb0" }).setOrigin(0.5));
-    overlay.add(this.add.text(VIEW_WIDTH / 2, 230, ending.summary, { fontFamily: "monospace", fontSize: "15px", color: "#ffffff", align: "center", lineSpacing: 8, wordWrap: { width: 520 } }).setOrigin(0.5));
-    const close = this.add.text(VIEW_WIDTH / 2, 350, "[ RETURN TO THE MOOR ]", { fontFamily: "monospace", fontSize: "14px", color: "#f4deb0", backgroundColor: "#30283a", padding: { x: 10, y: 8 } }).setOrigin(0.5).setInteractive({ useHandCursor: true });
-    close.on("pointerdown", () => overlay.destroy(true));
-    this.input.keyboard!.once("keydown-ENTER", () => overlay.destroy(true));
-    overlay.add(close);
-  }
 }
 
 function seededTerrain(seed: number, x: number, y: number): number {
