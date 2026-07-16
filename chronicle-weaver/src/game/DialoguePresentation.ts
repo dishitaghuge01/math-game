@@ -26,13 +26,27 @@ export function openEncounterDialogue(scene: Phaser.Scene, expedition: Expeditio
   overlay.add(scene.add.text(182, 58, `${speaker.name.toUpperCase()} — ${speaker.role.toUpperCase()}`, { fontFamily: "monospace", fontSize: "11px", color: "#b6a37c" }));
   overlay.add(scene.add.text(182, 78, title, { fontFamily: "monospace", fontSize: "18px", color: "#f4deb0" }));
   overlay.add(addTypewriterText(scene, 182, 116, line));
+  let selected = 0;
+  const selector = scene.add.text(156, 258, "▶", { fontFamily: "monospace", fontSize: "14px", color: "#ffcf70" });
+  const updateSelector = () => selector.setY(258 + selected * 48);
+  const choose = () => submit(choices[selected][1]);
   choices.forEach(([label, action], index) => {
     const option = scene.add.text(180, 250 + index * 48, label, { fontFamily: "monospace", fontSize: "15px", color: "#f4deb0", backgroundColor: "#30283a", padding: { x: 10, y: 8 } }).setInteractive({ useHandCursor: true });
     option.on("pointerdown", () => submit(action));
+    option.on("pointerover", () => { selected = index; updateSelector(); });
     overlay.add(option);
     scene.input.keyboard!.once(index === 0 ? "keydown-ONE" : "keydown-TWO", () => submit(action));
   });
-  overlay.add(scene.add.text(WIDTH / 2, 390, "PRESS 1 OR 2 · SPACE TO SKIP", { fontFamily: "monospace", fontSize: "11px", color: "#b6a37c" }).setOrigin(0.5));
+  const moveUp = () => { selected = (selected + choices.length - 1) % choices.length; updateSelector(); bindNavigation(); };
+  const moveDown = () => { selected = (selected + 1) % choices.length; updateSelector(); bindNavigation(); };
+  const bindNavigation = () => {
+    scene.input.keyboard!.once("keydown-UP", moveUp);
+    scene.input.keyboard!.once("keydown-DOWN", moveDown);
+  };
+  bindNavigation();
+  scene.input.keyboard!.once("keydown-ENTER", choose);
+  overlay.add(selector);
+  overlay.add(scene.add.text(WIDTH / 2, 390, "↑↓ SELECT · ENTER CONFIRM · 1/2 QUICK CHOOSE · SPACE SKIP", { fontFamily: "monospace", fontSize: "10px", color: "#b6a37c" }).setOrigin(0.5));
   return true;
 }
 
