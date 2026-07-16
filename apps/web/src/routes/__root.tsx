@@ -1,100 +1,87 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import {
-  Outlet,
-  Link,
-  createRootRouteWithContext,
-  useRouter,
-} from "@tanstack/react-router";
-import { useEffect} from "react";
-
-import { reportLovableError } from "../lib/lovable-error-reporting";
-
-function NotFoundComponent() {
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="max-w-md text-center">
-        <h1 className="text-7xl font-bold text-foreground">404</h1>
-        <h2 className="mt-4 text-xl font-semibold text-foreground">Page not found</h2>
-        <p className="mt-2 text-sm text-muted-foreground">
-          The page you're looking for doesn't exist or has been moved.
-        </p>
-        <div className="mt-6">
-          <Link
-            to="/"
-            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-          >
-            Go home
-          </Link>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
-  console.error(error);
-  const router = useRouter();
-  useEffect(() => {
-    reportLovableError(error, { boundary: "tanstack_root_error_component" });
-  }, [error]);
-
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="max-w-md text-center">
-        <h1 className="text-xl font-semibold tracking-tight text-foreground">
-          This page didn't load
-        </h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Something went wrong on our end. You can try refreshing or head back home.
-        </p>
-        <div className="mt-6 flex flex-wrap justify-center gap-2">
-          <button
-            onClick={() => {
-              router.invalidate();
-              reset();
-            }}
-            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-          >
-            Try again
-          </button>
-          <a
-            href="/"
-            className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
-          >
-            Go home
-          </a>
-        </div>
-      </div>
-    </div>
-  );
-}
+import { Link, Outlet, createRootRouteWithContext } from "@tanstack/react-router";
+import type { QueryClient } from "@tanstack/react-query";
+import { Compass, Map as MapIcon, Scroll, Shield } from "lucide-react";
+import { useGameStore } from "@/store/gameStore";
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
-  component: RootComponent,
-  notFoundComponent: NotFoundComponent,
-  errorComponent: ErrorComponent,
+  component: RootLayout,
+  notFoundComponent: () => (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="parchment-card p-10 max-w-md text-center">
+        <h1 className="text-4xl mb-3">Ye Wander Off the Map</h1>
+        <p className="font-body italic mb-6">This road leads nowhere in the known realms.</p>
+        <Link to="/" className="underline text-ember">Return to the tale</Link>
+      </div>
+    </div>
+  ),
 });
 
-function RootComponent() {
-  const { queryClient } = Route.useRouteContext();
-
+function NavLink({
+  to,
+  icon: Icon,
+  label,
+}: {
+  to: string;
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+}) {
   return (
-    <QueryClientProvider client={queryClient}>
-      <header className="border-b border-border bg-background/90 px-4 py-3">
-        <nav className="flex gap-4 text-sm">
-          <Link to="/decision" className="text-foreground hover:underline">
-            DECISION
+    <Link
+      to={to}
+      className="group flex items-center gap-2 px-3 py-2 font-heading uppercase tracking-widest text-xs text-[color:var(--color-ink-soft)] hover:text-[color:var(--color-ember)] transition-colors"
+      activeProps={{ className: "text-[color:var(--color-ember)]" }}
+    >
+      <Icon className="w-4 h-4" />
+      <span>{label}</span>
+    </Link>
+  );
+}
+
+function RootLayout() {
+  const palette = useGameStore((s) => s.palette);
+  const bannerStyle = {
+    background: `linear-gradient(135deg, ${palette[0]}, ${palette[1]}, ${palette[2]})`,
+  };
+  return (
+    <div className="min-h-screen flex flex-col">
+      <header className="border-b border-[color:var(--color-ink)]/30 backdrop-blur-sm sticky top-0 z-40"
+        style={{ background: "linear-gradient(180deg, oklch(0.9 0.05 78 / 0.95), oklch(0.86 0.06 75 / 0.9))" }}>
+        <div className="max-w-6xl mx-auto flex items-center justify-between px-6 py-3">
+          <Link to="/" className="flex items-center gap-3 group">
+            <div
+              className="w-10 h-10 rounded-full ink-border torchlight"
+              style={bannerStyle}
+              aria-hidden
+            />
+            <div className="leading-none">
+              <div className="font-display text-lg tracking-widest text-[color:var(--color-ink)]">
+                The Wayfarer's Codex
+              </div>
+              <div className="font-hand italic text-xs text-[color:var(--color-ink-soft)]">
+                a chronicle unwritten
+              </div>
+            </div>
           </Link>
-          <Link to="/world" className="text-foreground hover:underline">
-            WORLD
-          </Link>
-          <Link to="/character" className="text-foreground hover:underline">
-            CHARACTER
-          </Link>
-        </nav>
+          <nav className="flex items-center gap-1">
+            <NavLink to="/decision" icon={Scroll} label="The Tale" />
+            <NavLink to="/world" icon={MapIcon} label="The Map" />
+            <NavLink to="/character" icon={Shield} label="Thyself" />
+          </nav>
+        </div>
       </header>
-      {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      <Outlet />
-    </QueryClientProvider>
+
+      <main className="flex-1">
+        <Outlet />
+      </main>
+
+      <footer className="border-t border-[color:var(--color-ink)]/20 mt-16">
+        <div className="max-w-6xl mx-auto px-6 py-6 flex items-center justify-between text-xs font-hand italic text-[color:var(--color-ink-soft)]">
+          <span className="flex items-center gap-2">
+            <Compass className="w-3.5 h-3.5" /> penned in ink & candlelight
+          </span>
+          <span>— may your rolls be ever advantaged —</span>
+        </div>
+      </footer>
+    </div>
   );
 }

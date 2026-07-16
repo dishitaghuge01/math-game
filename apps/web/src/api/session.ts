@@ -1,55 +1,30 @@
-const SESSION_ID_KEY = 'math-game:sessionId';
-const USER_ID_KEY = 'math-game:userId';
+const SESSION_KEY = "math-game:sessionId";
+const USER_KEY = "math-game:userId";
 
-let cachedSessionId: string | null = null;
-let cachedUserId: string | null = null;
-
-function getStorage(): Storage | null {
-  if (typeof window === 'undefined' || !window.localStorage) {
-    return null;
-  }
-  return window.localStorage;
-}
-
-function readStoredValue(key: string): string | null {
-  const storage = getStorage();
-  if (!storage) {
-    return null;
-  }
-  return storage.getItem(key);
-}
-
-function writeStoredValue(key: string, value: string): void {
-  const storage = getStorage();
-  if (!storage) {
-    return;
-  }
-  storage.setItem(key, value);
-}
+let cached: { sessionId: string; userId: string } | null = null;
 
 export function getOrCreateClientIds(): { sessionId: string; userId: string } {
-  if (cachedSessionId && cachedUserId) {
-    return { sessionId: cachedSessionId, userId: cachedUserId };
+  if (cached) return cached;
+  if (typeof window === "undefined") {
+    // SSR safety fallback — not used in this SPA
+    return { sessionId: "ssr", userId: "ssr" };
   }
-
-  const storage = getStorage();
-  const existingSessionId = cachedSessionId ?? readStoredValue(SESSION_ID_KEY);
-  const existingUserId = cachedUserId ?? readStoredValue(USER_ID_KEY);
-
-  const sessionId = existingSessionId ?? crypto.randomUUID();
-  const userId = existingUserId ?? crypto.randomUUID();
-
-  cachedSessionId = sessionId;
-  cachedUserId = userId;
-
-  if (storage) {
-    if (!existingSessionId) {
-      writeStoredValue(SESSION_ID_KEY, sessionId);
-    }
-    if (!existingUserId) {
-      writeStoredValue(USER_ID_KEY, userId);
-    }
+  let sessionId = localStorage.getItem(SESSION_KEY);
+  let userId = localStorage.getItem(USER_KEY);
+  if (!sessionId) {
+    sessionId = crypto.randomUUID();
+    localStorage.setItem(SESSION_KEY, sessionId);
   }
+  if (!userId) {
+    userId = crypto.randomUUID();
+    localStorage.setItem(USER_KEY, userId);
+  }
+  cached = { sessionId, userId };
+  return cached;
+}
 
-  return { sessionId, userId };
+export function resetClientIds() {
+  localStorage.removeItem(SESSION_KEY);
+  localStorage.removeItem(USER_KEY);
+  cached = null;
 }
