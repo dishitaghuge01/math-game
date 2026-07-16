@@ -58,6 +58,12 @@ export interface ExpeditionState {
     "mercy" | "resolve" | "curiosity" | "defiance" | "kinship",
     { tier: string; recentShift: string }
   >;
+  combat: {
+    status: "active" | "victory" | "defeat";
+    enemy: { name: string; health: number; maxHealth: number };
+    activeMemberRole: "fighter" | "mage" | "support";
+    log: string[];
+  } | null;
   region: {
     name: string;
     currentLocationId: string;
@@ -159,10 +165,11 @@ export async function startExpedition(): Promise<ExpeditionState> {
   });
 }
 
-export async function postExpeditionAction(action: {
-  type: "travel";
-  destinationId: string;
-}): Promise<ExpeditionState> {
+export async function postExpeditionAction(
+  action:
+    | { type: "travel"; destinationId: string }
+    | { type: "combat"; action: "basic" | "guard" | "signature" },
+): Promise<ExpeditionState> {
   const { sessionId } = getOrCreateClientIds();
   return request<ExpeditionState>(`/expeditions/${encodeURIComponent(sessionId)}/actions`, {
     method: "POST",

@@ -58,12 +58,60 @@ function RegionMapPage() {
           ))}
         </div>
       </section>
+      {state.combat?.status === "active" && (
+        <CombatPanel
+          state={state}
+          busy={travel.isPending}
+          onAction={(action) => travel.mutate({ type: "combat", action })}
+        />
+      )}
       <div className="mt-6 flex justify-center">
         <button onClick={() => navigate({ to: "/" })} className="font-hand italic underline">
           consult the Expedition Party
         </button>
       </div>
     </div>
+  );
+}
+
+function CombatPanel({
+  state,
+  busy,
+  onAction,
+}: {
+  state: ExpeditionState;
+  busy: boolean;
+  onAction: (action: "basic" | "guard" | "signature") => void;
+}) {
+  const combat = state.combat!;
+  return (
+    <section className="parchment-card mt-6 p-6 border-2 border-[color:var(--color-blood)]/50 text-center">
+      <p className="font-heading uppercase tracking-widest text-xs">Combat Encounter</p>
+      <h2 className="font-display text-3xl mt-2">{combat.enemy.name}</h2>
+      <p className="font-hand italic">
+        Vitality {combat.enemy.health}/{combat.enemy.maxHealth} · {combat.activeMemberRole}&apos;s
+        turn
+      </p>
+      <div className="grid grid-cols-3 gap-2 max-w-md mx-auto mt-5">
+        {(
+          [
+            ["basic", "Strike"],
+            ["guard", "Guard"],
+            ["signature", "Signature"],
+          ] as const
+        ).map(([action, label]) => (
+          <button
+            key={action}
+            disabled={busy}
+            onClick={() => onAction(action)}
+            className="py-3 bg-[color:var(--color-ink)] text-[color:var(--color-parchment)] font-heading text-xs uppercase tracking-wider hover:bg-[color:var(--color-ember)] disabled:opacity-50"
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+      <p className="font-hand italic text-sm mt-4">{combat.log.at(-1)}</p>
+    </section>
   );
 }
 

@@ -62,4 +62,21 @@ describe('Expedition API', () => {
     const resumed = await fetch(`${baseUrl}/expeditions/${expeditionId}`);
     expect(await resumed.json()).toEqual(next);
   });
+
+  it('opens a three-member Combat Encounter and resolves a party action', async () => {
+    const expeditionId = `combat-test-${Date.now()}`;
+    const started = await fetch(`${baseUrl}/expeditions`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ expeditionId, worldSeed: 314159 }) });
+    const expedition = await started.json() as { region: { locations: Array<{ id: string; type: string }> } };
+    const combatLocation = expedition.region.locations.find((location) => location.type === 'combat')!;
+    const travelled = await fetch(`${baseUrl}/expeditions/${expeditionId}/actions`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'travel', destinationId: combatLocation.id }) });
+    const inCombat = await travelled.json() as { combat: { status: string; enemy: { health: number }; activeMemberRole: string } };
+    expect(inCombat.combat.status).toBe('active');
+    expect(inCombat.combat.activeMemberRole).toBe('fighter');
+
+    const acted = await fetch(`${baseUrl}/expeditions/${expeditionId}/actions`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'combat', action: 'signature' }) });
+    expect(acted.status).toBe(200);
+    const afterAction = await acted.json() as { combat: { enemy: { health: number }; log: string[] } };
+    expect(afterAction.combat.enemy.health).toBeLessThan(inCombat.combat.enemy.health);
+    expect(afterAction.combat.log.length).toBeGreaterThan(0);
+  });
 });

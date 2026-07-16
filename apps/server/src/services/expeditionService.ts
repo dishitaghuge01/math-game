@@ -17,6 +17,7 @@ export interface ExpeditionState {
   party: Array<{ role: PartyRole; name: string; motive: string; portrait: string }>;
   traits: Record<'mercy' | 'resolve' | 'curiosity' | 'defiance' | 'kinship', { tier: string; recentShift: string }>;
   region: { name: string; currentLocationId: string; locations: RegionLocation[] };
+  combat: { status: 'active' | 'victory' | 'defeat'; enemy: { name: string; health: number; maxHealth: number }; activeMemberRole: PartyRole; log: string[] } | null;
 }
 
 const names: Record<PartyRole, string[]> = {
@@ -46,6 +47,7 @@ export function startExpedition(expeditionId: string, requestedSeed?: number): E
       kinship: { tier: 'unwritten', recentShift: 'steady' },
     },
     region: createRegion(worldSeed),
+    combat: null,
   };
   const now = new Date().toISOString();
   db.prepare('INSERT INTO expeditions (expedition_id, state_json, created_at, updated_at) VALUES (?, ?, ?, ?)')
@@ -61,9 +63,30 @@ export function travelToLocation(expeditionId: string, destinationId: string): E
   if (!origin?.connectedTo.includes(destinationId) || !destination) throw Object.assign(new Error('Destination is not reachable'), { status: 400 });
   state.region.currentLocationId = destinationId;
   destination.revealed = true;
+  if (destination.type === 'combat') {
+    state.combat = { status: 'active', enemy: { name: 'Fogbound Revenant', health: 18, maxHealth: 18 }, activeMemberRole: 'fighter', log: ['A Fogbound Revenant bars the road.'] };
+  }
   for (const neighborId of destination.connectedTo) {
     const neighbor = state.region.locations.find((location) => location.id === neighborId);
     if (neighbor) neighbor.revealed = true;
+  }
+  saveExpedition(state);
+  return state;
+}
+
+export function resolveCombatAction(expeditionId: string, action: 'basic' | 'guard' | 'signature'): ExpeditionState {
+  const state = loadExpedition(expeditionId);
+  if (!state) throw Object.assign(new Error('Expedition not found'), { status: 404 });
+  if (!state.combat || state.combat.status !== 'active') throw Object.assign(new Error('No active Combat Encounter'), { status: 400 });
+  const damage = action === 'signature' ? 7 : action === 'basic' ? 4 : 1;
+  state.combat.enemy.health = Math.max(0, state.combat.enemy.health - damage);
+  state.combat.log.push(`${state.combat.activeMemberRole} uses ${action} for ${damage} damage.`);
+  if (state.combat.enemy.health === 0) {
+    state.combat.status = 'victory';
+    state.combat.log.push('The road is clear.');
+  } else {
+    const roles: PartyRole[] = ['fighter', 'mage', 'support'];
+    state.combat.activeMemberRole = roles[(roles.indexOf(state.combat.activeMemberRole) + 1) % roles.length];
   }
   saveExpedition(state);
   return state;
